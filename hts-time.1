@@ -1,0 +1,56 @@
+.TH HTS-TIME 1 "December 2025" "hts-time 0.1.0" "User Commands"
+.SH NAME
+hts-time \- Storcke Human Time System (HTS) date and time utility
+.SH SYNOPSIS
+.B hts-time
+[\fIOPTION\fR]
+.SH DESCRIPTION
+.B hts-time
+calculates and displays the current date and time based on the Human Time System (HTS), where the epoch start is -37977 CE.
+.P
+The default output shows the HTS Epoch letter, the HTS Year within that epoch, and the current Gregorian date and time.
+.SH OPTIONS
+.TP
+.B \-h, \--help
+Display this help message and exit.
+.TP
+.B \-v, \--version
+Output the application version number and exit immediately.
+.TP
+.B \-x, \--unix-std
+Output the time identically to the native 'date' command, overriding all HTS formatting.
+.TP
+.B \-p, \--precision
+Display the HTS Year with fractional time (decimal precision) to show time-of-day within the year.
+.TP
+.B \-s, \--supercycle
+Display verbose information regarding the HTS Supercycle (1,300,000 year cycle) and current Epoch parameters.
+.TP
+.B \-S, \--supercycle-num
+Output \fIONLY\fR the current Supercycle number and exit. This is ideal for scripting.
+.TP
+.B \-f, \--format \fIFORMAT\fR
+Specify a custom output \fIFORMAT\fR string. This supports both standard C time specifiers and HTS specifiers.
+.SH HTS FORMAT SPECIFIERS
+The following specifiers can be used with the \fB\-f\fR option:
+.TP
+.B %Z
+HTS Epoch and Year (e.g., A40002)
+.TP
+.B %E
+HTS Epoch Letter (e.g., A)
+.TP
+.B %Y
+HTS Year (00000-49999)
+.TP
+.B %D
+HTS Day of Year (001-366)
+.SH EXAMPLE
+.nf
+$ hts-time
+$ hts-time -f "Today is %A, HTS Epoch %Z at %r."
+$ hts-time -S
+$ hts-time --supercycle
+.fi
+.SH SEE ALSO
+.BR date(1)
