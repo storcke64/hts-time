@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "logic.h"
 
 #define CONFIG_FILE "hts_settings.ini"
@@ -17,6 +18,31 @@ typedef struct {
     gboolean show_greg_year;
     int theme_id;
 } HtsApp;
+
+/* --- UPDATED CLI LOGIC --- */
+
+static void run_cli_mode() {
+    time_t now = time(NULL);
+    struct tm *t = gmtime(&now); // UTC as per your universal tool design
+
+    // Call your actual logic function to get the correct HTS notation (e.g., A40,002)
+    char *hts_notation = calculate_hts_string(t->tm_year + 1900);
+
+    char time24[10];
+    char time12[20];
+
+    strftime(time24, sizeof(time24), "%H:%M", t);
+    strftime(time12, sizeof(time12), "%I:%M %p", t);
+
+    printf("\n========================================\n");
+    printf("        HUMAN TIME SYSTEM (CLI)        \n");
+    printf("========================================\n");
+    printf("  HTS DATE: %s\n", hts_notation);
+    printf("  REF TIME: %s or %s\n", time24, time12);
+    printf("========================================\n\n");
+
+    g_free(hts_notation);
+}
 
 /* --- SETTINGS PERSISTENCE --- */
 
@@ -164,21 +190,17 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_window_set_default_size(GTK_WINDOW(window), 1250, 850);
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 
-    /* Setting Taskbar Icon */
-    gtk_window_set_icon_name(GTK_WINDOW(window), "com.storcke64.hts-time");
+    gtk_window_set_icon_name(GTK_WINDOW(window), "com.storcke64.hts_time");
 
     app->css_provider = gtk_css_provider_new();
     gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(app->css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     apply_theme(app);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
-
-    /* Correct GTK 4 Individual Margins */
     gtk_widget_set_margin_top(main_box, 30);
     gtk_widget_set_margin_bottom(main_box, 30);
     gtk_widget_set_margin_start(main_box, 30);
     gtk_widget_set_margin_end(main_box, 30);
-
     gtk_window_set_child(GTK_WINDOW(window), main_box);
 
     GtkWidget *header_grid = gtk_grid_new();
@@ -212,7 +234,6 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_box_append(GTK_BOX(prov_card), prov_label);
     gtk_grid_attach(GTK_GRID(header_grid), prov_card, 1, 0, 1, 1);
 
-    // Main Logo - Using correct resource path
     GtkWidget *logo_image = gtk_image_new_from_resource("/com/storcke64/hts/logo.png");
     gtk_image_set_pixel_size(GTK_IMAGE(logo_image), 200);
     gtk_grid_attach(GTK_GRID(header_grid), logo_image, 2, 0, 1, 1);
@@ -228,7 +249,6 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_grid_set_column_homogeneous(GTK_GRID(tool_grid), TRUE);
     gtk_box_append(GTK_BOX(main_box), tool_grid);
 
-    // Converters
     GtkWidget *c1 = create_card("GREGORIAN TO HTS");
     app->entry_greg = gtk_entry_new(); gtk_box_append(GTK_BOX(c1), app->entry_greg);
     GtkWidget *b1 = gtk_button_new_with_label("Calculate Notation");
@@ -258,7 +278,7 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_box_append(GTK_BOX(c3), app->entry_past);
     GtkWidget *bp = gtk_button_new_with_label("Get Past Notation");
     g_signal_connect(bp, "clicked", G_CALLBACK(on_calc_past), app);
-    gtk_box_append(GTK_BOX(c3), bp);
+    gtk_box_append(GTK_BOX(c3), app->entry_past);
     app->label_past_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c3), app->label_past_result);
     gtk_grid_attach(GTK_GRID(tool_grid), c3, 0, 1, 1, 1);
 
@@ -272,7 +292,6 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     app->label_dur_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c4), app->label_dur_result);
     gtk_grid_attach(GTK_GRID(tool_grid), c4, 1, 1, 1, 1);
 
-    // Theme Switcher
     GtkWidget *bottom_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_widget_set_halign(bottom_bar, GTK_ALIGN_CENTER);
     const char *names[] = {"Dark", "Light", "Sepia", "Slate", "Neon Pink"};
@@ -288,12 +307,15 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
 }
 
 int main(int argc, char *argv[]) {
+    if (isatty(STDOUT_FILENO)) {
+        run_cli_mode();
+        return 0;
+    }
+
     g_setenv("GTK_A11Y", "none", TRUE);
     HtsApp *app_data = g_new0(HtsApp, 1);
 
-    /* Matches Flatpak ID with Underscore */
     GtkApplication *app = gtk_application_new("com.storcke64.hts_time", G_APPLICATION_DEFAULT_FLAGS);
-
     g_signal_connect(app, "activate", G_CALLBACK(activate), app_data);
     int status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app); g_free(app_data); return status;
