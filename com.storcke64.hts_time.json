@@ -1,27 +1,15 @@
 {
-    "app-id": "com.storcke64.hts-time",
-    "icon": "com.storcke64.hts-time",
-    "runtime": "org.freedesktop.Platform",
-    "runtime-version": "23.08",
-    "sdk": "org.freedesktop.Sdk",
+    "app-id": "com.storcke64.hts_time",
+    "runtime": "org.gnome.Platform",
+    "runtime-version": "46",
+    "sdk": "org.gnome.Sdk",
     "command": "hts-time",
-    "actions": [
-        {
-            "name": "Show Supercycle Details",
-            "command": "hts-time --supercycle",
-            "condition": "desktop-startup",
-            "description": "Display verbose HTS epoch and cycle information."
-        }
-    ],
-    "cleanup": [
-        "/include",
-        "/lib/pkgconfig",
-        "/man",
-        "/share/doc",
-        "/share/gtk-doc",
-        "/share/man",
-        "*.la",
-        "*.a"
+    "finish-args": [
+        "--share=ipc",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--device=dri",
+        "--filesystem=home"
     ],
     "modules": [
         {

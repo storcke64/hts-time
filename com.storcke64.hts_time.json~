@@ -1,0 +1,26 @@
+{
+    "app-id" : "com.storcke64.hts_time",
+    "runtime" : "org.gnome.Platform",
+    "runtime-version" : "46",
+    "sdk" : "org.gnome.Sdk",
+    "command" : "hts-time",
+    "finish-args" : [
+        "--share=ipc",
+        "--socket=fallback-x11",
+        "--socket=wayland",
+        "--device=dri",
+        "--share=network"
+    ],
+    "modules" : [
+        {
+            "name" : "hts-time",
+            "buildsystem" : "meson",
+            "sources" : [
+                {
+                    "type" : "dir",
+                    "path" : "."
+                }
+            ]
+        }
+    ]
+}

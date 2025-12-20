@@ -1,0 +1,12 @@
+# Meson/Ninja build directories
+_build/
+build_dir/
+
+# Flatpak builder internal files
+.flatpak-builder/
+
+# Compiled binaries and logs
+meson-logs/
+*.o
+*.a
+*.la

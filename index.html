@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Human Time System (HTS) Converters</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        #app-content { padding: 20px 0; width: 100%; }
+        .container {
+            background-color: #ffffff;
+            padding: 40px 20px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 450px;
+            margin: 0 auto 30px auto;
+            text-align: center;
+        }
+        h1, h2 { color: #1a1a2e; margin-bottom: 25px; }
+        label { display: block; margin-top: 20px; font-weight: 600; text-align: left; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            margin-top: 30px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        .result-box {
+            margin-top: 35px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #e6f7ff;
+            font-weight: bold;
+        }
+        footer { margin: 40px auto; text-align: center; font-size: 0.8em; color: #666; }
+    </style>
+</head>
+<body>
+
+<div id="app-content">
+    <div class="container">
+        <h1>Gregorian to HTS</h1>
+        <label for="gregorianYear">Enter Gregorian Year:</label>
+        <input type="number" id="gregorianYear" placeholder="2025">
+        <button onclick="uiConvertToHTS()">Calculate HTS</button>
+        <div id="result-convert" class="result-box">Result will appear here.</div>
+    </div>
+
+    <div class="container">
+        <h2>Live HTS Time</h2>
+        <div id="live-time" style="font-size: 2em; color: #007bff; font-weight: 800;">--:--:--</div>
+        <div id="live-hts" style="font-size: 2.5em; color: #1a1a2e; font-weight: 800;">--------</div>
+    </div>
+
+    <footer>
+        <p>Powered by the Storcke Family Products HTS Tool</p>
+    </footer>
+</div>
+
+<script>
+    /**
+     * BRIDGE FUNCTION: Sends data to the C backend
+     * This calls the "htsHandler" we defined in main.c
+     */
+    function sendToC(action, value) {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.htsHandler) {
+            const message = JSON.stringify({ action: action, data: value });
+            window.webkit.messageHandlers.htsHandler.postMessage(message);
+        } else {
+            console.log("C Bridge not found. Running in web mode.");
+        }
+    }
+
+    function uiConvertToHTS() {
+        const year = document.getElementById('gregorianYear').value;
+        // Tell the C backend to calculate this
+        sendToC("convert", year);
+
+        // Note: In a full implementation, C would send a message back.
+        // For now, we've enabled the bridge channel.
+    }
+
+    // Initialize the live clock
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('live-time').innerText = now.toLocaleTimeString();
+    }, 1000);
+
+</script>
+</body>
+</html>

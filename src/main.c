@@ -1,254 +1,300 @@
-#include <stdio.h>
+#include <gtk/gtk.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
-#include <math.h>
+#include "logic.h"
 
-// --- Constants Aligned with HTS Logic (2023 CE = A40000) ---
-// HTS Start Year: 2023 - 40000 = -37977 CE.
-const int EPOCH_LENGTH = 50000;
-const int SUPER_CYCLE_LENGTH = 1300000; // 26 Epochs * 50,000 years
-const int EPOCH_START_CE = -37977;
+#define CONFIG_FILE "hts_settings.ini"
 
-// --- NEW CONSTANT ---
-const char * const APP_VERSION = "0.1.0"; // Should match version in meson.build
+typedef struct {
+    GtkWidget *label_live_clock, *label_greg_year, *greg_container;
+    GtkWidget *entry_greg, *label_hts_result;
+    GtkWidget *entry_hts, *label_greg_result;
+    GtkWidget *entry_future, *label_future_result;
+    GtkWidget *entry_past, *label_past_result;
+    GtkWidget *entry_dur_start, *entry_dur_end, *label_dur_result;
+    GtkCssProvider *css_provider;
+    gboolean show_greg_year;
+    int theme_id;
+} HtsApp;
 
-// --- Function Prototypes ---
-void show_help(void);
-// NOTE: Added 'int *supercycle_num' to the prototype
-int calculate_hts_components(int year_ce, char *epoch_char, int *hts_year, int *hts_day, int *supercycle_num);
-void format_output(char *buffer, size_t buffer_size, int hts_year, char epoch_char, int hts_day, struct tm *local_time_info, const char *format_string);
+/* --- SETTINGS PERSISTENCE --- */
 
-// --- Core HTS Logic ---
-
-/**
- * Calculates HTS components (Supercycle, Epoch, Year) from a Gregorian CE year.
- * Returns 0 on success.
- */
-int calculate_hts_components(int year_ce, char *epoch_char, int *hts_year, int *hts_day, int *supercycle_num) {
-    long years_since_epoch_start;
-    int epoch_index;
-    long years_within_supercycle;
-
-    years_since_epoch_start = (long)year_ce - EPOCH_START_CE;
-
-    if (years_since_epoch_start < 0) {
-        fprintf(stderr, "Error: Gregorian year is before the HTS start of %d CE.\n", EPOCH_START_CE);
-        return -1;
-    }
-
-    // 1. Supercycle Calculation
-    *supercycle_num = (years_since_epoch_start / SUPER_CYCLE_LENGTH) + 1;
-
-    // Years within the current Supercycle
-    years_within_supercycle = years_since_epoch_start % SUPER_CYCLE_LENGTH;
-
-    // 2. Epoch Index Calculation
-    epoch_index = years_within_supercycle / EPOCH_LENGTH;
-
-    // Assign the Epoch letter (A-Z cycle)
-    *epoch_char = 'A' + (epoch_index % 26);
-
-    // 3. HTS Year Calculation (00000 to 49999)
-    *hts_year = years_since_epoch_start % EPOCH_LENGTH;
-
-    return 0;
+static void save_settings(HtsApp *app) {
+    GKeyFile *key_file = g_key_file_new();
+    g_key_file_set_boolean(key_file, "Settings", "ShowGregorian", app->show_greg_year);
+    g_key_file_set_integer(key_file, "Settings", "ThemeID", app->theme_id);
+    g_key_file_save_to_file(key_file, CONFIG_FILE, NULL);
+    g_key_file_free(key_file);
 }
 
-// --- Output Formatting ---
-
-/**
- * Replaces HTS format specifiers (%Z, %E, %Y, %D) and common C time specifiers.
- */
-void format_output(char *buffer, size_t buffer_size, int hts_year, char epoch_char, int hts_day, struct tm *local_time_info, const char *format_string) {
-    char temp_buffer[buffer_size];
-    char *p;
-    char *out;
-
-    // Use strftime to handle standard time specifiers (like %A, %r, %H, etc.)
-    strftime(temp_buffer, buffer_size, format_string, local_time_info);
-
-    // Manually replace HTS specifiers
-    p = temp_buffer;
-    out = buffer;
-
-    while (*p && (out - buffer < buffer_size - 1)) {
-        if (*p == '%' && *(p + 1)) {
-            p++;
-
-            // HTS Specifiers
-            if (*p == 'Z') { // HTS Epoch and Year (e.g., A40002)
-                out += snprintf(out, buffer_size - (out - buffer), "%c%05d", epoch_char, hts_year);
-            } else if (*p == 'E') { // HTS Epoch Letter (e.g., A)
-                out += snprintf(out, buffer_size - (out - buffer), "%c", epoch_char);
-            } else if (*p == 'Y') { // HTS Year (00000-49999)
-                out += snprintf(out, buffer_size - (out - buffer), "%05d", hts_year);
-            } else if (*p == 'D') { // HTS Day of Year (001-366)
-                out += snprintf(out, buffer_size - (out - buffer), "%03d", hts_day);
-            }
-            // Copy standard specifiers
-            else {
-                *out++ = '%';
-                *out++ = *p;
-            }
-        } else {
-            *out++ = *p;
-        }
-        p++;
-    }
-    *out = '\0'; // Null-terminate the final string
+static void load_settings(HtsApp *app) {
+    GKeyFile *key_file = g_key_file_new();
+    if (g_key_file_load_from_file(key_file, CONFIG_FILE, G_KEY_FILE_NONE, NULL)) {
+        app->show_greg_year = g_key_file_get_boolean(key_file, "Settings", "ShowGregorian", NULL);
+        app->theme_id = g_key_file_get_integer(key_file, "Settings", "ThemeID", NULL);
+    } else { app->show_greg_year = TRUE; app->theme_id = 0; }
+    g_key_file_free(key_file);
 }
 
-// --- Main Program Logic ---
+/* --- THEME ENGINE --- */
+
+static void apply_theme(HtsApp *app) {
+    const char *themes[] = {
+        /* 0: Dark */      "window { background-color: #1e1e1e; color: white; } .card { background-color: #242424; border: 1px solid #303030; } entry { background-color: #303030; color: white; }",
+        /* 1: Light */     "window { background-color: #f6f5f4; color: black; } .card { background-color: white; border: 1px solid #dcdcdc; } entry { background-color: #ffffff; color: black; }",
+        /* 2: Sepia */     "window { background-color: #f4ecd8; color: #5b4636; } .card { background-color: #fdf6e3; border: 1px solid #eee8d5; } entry { background-color: #fdf6e3; color: #5b4636; }",
+        /* 3: Slate */     "window { background-color: #2f343f; color: #d3dae3; } .card { background-color: #383c4a; border: 1px solid #4b5162; } entry { background-color: #404552; color: white; }",
+        /* 4: Neon Pink */ "window { background-color: #1a001a; color: #ff00ff; } .card { background-color: #2b002b; border: 1px solid #ff00ff; } entry { background-color: #3d003d; color: white; border-color: #ff00ff; } button.suggested-action { background-color: #ff00ff !important; }"
+    };
+
+    char *full_css = g_strdup_printf(
+        "%s .card { border-radius: 12px; padding: 18px; } "
+        "entry { border-radius: 6px; border: 1px solid #404040; padding: 6px; } "
+        "button.suggested-action { background-color: #3584e4; color: white; font-weight: bold; border-radius: 8px; }",
+        themes[app->theme_id]);
+
+    gtk_css_provider_load_from_string(app->css_provider, full_css);
+    g_free(full_css);
+    save_settings(app);
+}
+
+/* --- HANDLERS --- */
+
+static void on_theme_clicked(GtkButton *btn, gpointer data) {
+    HtsApp *app = (HtsApp *)data;
+    app->theme_id = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "id"));
+    apply_theme(app);
+}
+
+static void on_greg_toggle(GtkCheckButton *btn, gpointer data) {
+    HtsApp *app = (HtsApp *)data;
+    app->show_greg_year = gtk_check_button_get_active(btn);
+    gtk_widget_set_visible(app->greg_container, app->show_greg_year);
+    save_settings(app);
+}
+
+static void on_copy_clicked(GtkButton *btn, gpointer data) {
+    (void)btn; HtsApp *app = (HtsApp *)data;
+    time_t t = time(NULL);
+    char *hts = calculate_hts_string(gmtime(&t)->tm_year + 1900);
+    gdk_clipboard_set_text(gtk_widget_get_clipboard(GTK_WIDGET(app->label_live_clock)), hts);
+    g_free(hts);
+}
+
+/* --- CALCULATORS --- */
+
+static void on_convert_to_hts(GtkButton *btn, gpointer data) {
+    (void)btn; HtsApp *app = (HtsApp *)data;
+    char *hts = calculate_hts_string(atoi(gtk_editable_get_text(GTK_EDITABLE(app->entry_greg))));
+    char *out = g_strdup_printf("<span size='large' weight='bold' foreground='#3584e4'>%s</span>", hts);
+    gtk_label_set_markup(GTK_LABEL(app->label_hts_result), out);
+    g_free(hts); g_free(out);
+}
+
+static void on_convert_to_greg(GtkButton *btn, gpointer data) {
+    (void)btn; HtsApp *app = (HtsApp *)data;
+    long greg = gregorian_from_hts(gtk_editable_get_text(GTK_EDITABLE(app->entry_hts)));
+    char *out = g_strdup_printf("<span size='large' weight='bold' foreground='#2ec27e'>%ld Anno Domini</span>", greg);
+    gtk_label_set_markup(GTK_LABEL(app->label_greg_result), out);
+    g_free(out);
+}
+
+static void on_calc_future(GtkButton *btn, gpointer data) {
+    (void)btn; HtsApp *app = (HtsApp *)data;
+    time_t t = time(NULL);
+    int target = (gmtime(&t)->tm_year + 1900) + atoi(gtk_editable_get_text(GTK_EDITABLE(app->entry_future)));
+    char *hts = calculate_hts_string(target);
+    gtk_label_set_markup(GTK_LABEL(app->label_future_result), hts);
+    g_free(hts);
+}
+
+static void on_calc_past(GtkButton *btn, gpointer data) {
+    (void)btn; HtsApp *app = (HtsApp *)data;
+    time_t t = time(NULL);
+    int target = (gmtime(&t)->tm_year + 1900) - atoi(gtk_editable_get_text(GTK_EDITABLE(app->entry_past)));
+    char *hts = calculate_hts_string(target);
+    gtk_label_set_markup(GTK_LABEL(app->label_past_result), hts);
+    g_free(hts);
+}
+
+static void on_calc_duration(GtkButton *btn, gpointer data) {
+    (void)btn; HtsApp *app = (HtsApp *)data;
+    int diff = atoi(gtk_editable_get_text(GTK_EDITABLE(app->entry_dur_end))) - atoi(gtk_editable_get_text(GTK_EDITABLE(app->entry_dur_start)));
+    char *out = g_strdup_printf("<span weight='bold' size='large'>%d Years</span>", diff);
+    gtk_label_set_markup(GTK_LABEL(app->label_dur_result), out);
+    g_free(out);
+}
+
+/* --- UI HELPERS --- */
+
+static gboolean update_clock(gpointer data) {
+    HtsApp *app = (HtsApp *)data;
+    time_t t = time(NULL); struct tm *tm_info = gmtime(&t);
+    char date_str[64]; strftime(date_str, sizeof(date_str), "%A, %B %d, %Y", tm_info);
+    char *hts = calculate_hts_string(tm_info->tm_year + 1900);
+    char *markup = g_strdup_printf("<span size='x-large' font_family='monospace' weight='bold' foreground='#3584e4'>%s</span>\n<span size='small' alpha='70%%'>%s</span>", hts, date_str);
+    char *greg_markup = g_strdup_printf("<span font_family='monospace' size='small'>Gregorian Year: %d</span>", tm_info->tm_year + 1900);
+    gtk_label_set_markup(GTK_LABEL(app->label_live_clock), markup);
+    gtk_label_set_markup(GTK_LABEL(app->label_greg_year), greg_markup);
+    g_free(hts); g_free(markup); g_free(greg_markup);
+    return TRUE;
+}
+
+static GtkWidget* create_card(const char *title) {
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_add_css_class(box, "card");
+    GtkWidget *label = gtk_label_new(NULL);
+    char *markup = g_strdup_printf("<span size='small' weight='bold' alpha='60%%'>%s</span>", title);
+    gtk_label_set_markup(GTK_LABEL(label), markup);
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_box_append(GTK_BOX(box), label);
+    g_free(markup);
+    return box;
+}
+
+/* --- MAIN ACTIVATION --- */
+
+static void activate(GtkApplication *gtk_app, gpointer user_data) {
+    HtsApp *app = (HtsApp *)user_data;
+    load_settings(app);
+
+    GtkWidget *window = gtk_application_window_new(gtk_app);
+    gtk_window_set_title(GTK_WINDOW(window), "Human Time System Universal Tool");
+    gtk_window_set_default_size(GTK_WINDOW(window), 1250, 850);
+    gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+
+    /* Setting Taskbar Icon */
+    gtk_window_set_icon_name(GTK_WINDOW(window), "com.storcke64.hts-time");
+
+    app->css_provider = gtk_css_provider_new();
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(app->css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    apply_theme(app);
+
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+
+    /* Correct GTK 4 Individual Margins */
+    gtk_widget_set_margin_top(main_box, 30);
+    gtk_widget_set_margin_bottom(main_box, 30);
+    gtk_widget_set_margin_start(main_box, 30);
+    gtk_widget_set_margin_end(main_box, 30);
+
+    gtk_window_set_child(GTK_WINDOW(window), main_box);
+
+    GtkWidget *header_grid = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(header_grid), 25);
+    gtk_box_append(GTK_BOX(main_box), header_grid);
+
+    GtkWidget *clock_card = create_card("CURRENT HUMAN TIME NOTATION (UTC)");
+    GtkWidget *clock_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 15);
+    app->label_live_clock = gtk_label_new(NULL);
+    gtk_box_append(GTK_BOX(clock_hbox), app->label_live_clock);
+    GtkWidget *copy_btn = gtk_button_new_from_icon_name("edit-copy-symbolic");
+    gtk_widget_set_valign(copy_btn, GTK_ALIGN_START);
+    g_signal_connect(copy_btn, "clicked", G_CALLBACK(on_copy_clicked), app);
+    gtk_box_append(GTK_BOX(clock_hbox), copy_btn);
+    gtk_box_append(GTK_BOX(clock_card), clock_hbox);
+
+    app->greg_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    app->label_greg_year = gtk_label_new(NULL);
+    gtk_box_append(GTK_BOX(app->greg_container), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    gtk_box_append(GTK_BOX(app->greg_container), app->label_greg_year);
+    gtk_box_append(GTK_BOX(clock_card), app->greg_container);
+    gtk_widget_set_visible(app->greg_container, app->show_greg_year);
+
+    gtk_grid_attach(GTK_GRID(header_grid), clock_card, 0, 0, 1, 1);
+    gtk_widget_set_hexpand(clock_card, TRUE);
+    g_timeout_add_seconds(1, update_clock, app);
+
+    GtkWidget *prov_card = create_card("PROVENANCE");
+    GtkWidget *prov_label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(prov_label), "<span size='small' font_family='monospace'>Inventor: Antonio Storcke\nDate: Jan 15, 2023\nLifespan: 24B Years (∞)</span>");
+    gtk_box_append(GTK_BOX(prov_card), prov_label);
+    gtk_grid_attach(GTK_GRID(header_grid), prov_card, 1, 0, 1, 1);
+
+    // Main Logo - Using correct resource path
+    GtkWidget *logo_image = gtk_image_new_from_resource("/com/storcke64/hts/logo.png");
+    gtk_image_set_pixel_size(GTK_IMAGE(logo_image), 200);
+    gtk_grid_attach(GTK_GRID(header_grid), logo_image, 2, 0, 1, 1);
+
+    GtkWidget *greg_switch = gtk_check_button_new_with_label("Show Gregorian Year in Clock Display");
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(greg_switch), app->show_greg_year);
+    g_signal_connect(greg_switch, "toggled", G_CALLBACK(on_greg_toggle), app);
+    gtk_box_append(GTK_BOX(main_box), greg_switch);
+
+    GtkWidget *tool_grid = gtk_grid_new();
+    gtk_grid_set_column_spacing(GTK_GRID(tool_grid), 30);
+    gtk_grid_set_row_spacing(GTK_GRID(tool_grid), 25);
+    gtk_grid_set_column_homogeneous(GTK_GRID(tool_grid), TRUE);
+    gtk_box_append(GTK_BOX(main_box), tool_grid);
+
+    // Converters
+    GtkWidget *c1 = create_card("GREGORIAN TO HTS");
+    app->entry_greg = gtk_entry_new(); gtk_box_append(GTK_BOX(c1), app->entry_greg);
+    GtkWidget *b1 = gtk_button_new_with_label("Calculate Notation");
+    gtk_widget_add_css_class(b1, "suggested-action");
+    g_signal_connect(b1, "clicked", G_CALLBACK(on_convert_to_hts), app);
+    gtk_box_append(GTK_BOX(c1), b1);
+    app->label_hts_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c1), app->label_hts_result);
+    gtk_grid_attach(GTK_GRID(tool_grid), c1, 0, 0, 1, 1);
+
+    GtkWidget *c2 = create_card("HTS TO GREGORIAN");
+    app->entry_hts = gtk_entry_new(); gtk_box_append(GTK_BOX(c2), app->entry_hts);
+    GtkWidget *b2 = gtk_button_new_with_label("Calculate Anno Domini");
+    g_signal_connect(b2, "clicked", G_CALLBACK(on_convert_to_greg), app);
+    gtk_box_append(GTK_BOX(c2), b2);
+    app->label_greg_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c2), app->label_greg_result);
+    gtk_grid_attach(GTK_GRID(tool_grid), c2, 1, 0, 1, 1);
+
+    GtkWidget *c3 = create_card("RELATIVE TIME LOOKUP");
+    app->entry_future = gtk_entry_new(); gtk_entry_set_placeholder_text(GTK_ENTRY(app->entry_future), "Years in Future");
+    gtk_box_append(GTK_BOX(c3), app->entry_future);
+    GtkWidget *bf = gtk_button_new_with_label("Get Future Notation");
+    g_signal_connect(bf, "clicked", G_CALLBACK(on_calc_future), app);
+    gtk_box_append(GTK_BOX(c3), bf);
+    app->label_future_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c3), app->label_future_result);
+
+    app->entry_past = gtk_entry_new(); gtk_entry_set_placeholder_text(GTK_ENTRY(app->entry_past), "Years in Past");
+    gtk_box_append(GTK_BOX(c3), app->entry_past);
+    GtkWidget *bp = gtk_button_new_with_label("Get Past Notation");
+    g_signal_connect(bp, "clicked", G_CALLBACK(on_calc_past), app);
+    gtk_box_append(GTK_BOX(c3), bp);
+    app->label_past_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c3), app->label_past_result);
+    gtk_grid_attach(GTK_GRID(tool_grid), c3, 0, 1, 1, 1);
+
+    GtkWidget *c4 = create_card("DURATION CALCULATOR");
+    app->entry_dur_start = gtk_entry_new(); gtk_entry_set_placeholder_text(GTK_ENTRY(app->entry_dur_start), "Start Year");
+    app->entry_dur_end = gtk_entry_new(); gtk_entry_set_placeholder_text(GTK_ENTRY(app->entry_dur_end), "End Year");
+    gtk_box_append(GTK_BOX(c4), app->entry_dur_start); gtk_box_append(GTK_BOX(c4), app->entry_dur_end);
+    GtkWidget *b4 = gtk_button_new_with_label("Calculate Difference");
+    g_signal_connect(b4, "clicked", G_CALLBACK(on_calc_duration), app);
+    gtk_box_append(GTK_BOX(c4), b4);
+    app->label_dur_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c4), app->label_dur_result);
+    gtk_grid_attach(GTK_GRID(tool_grid), c4, 1, 1, 1, 1);
+
+    // Theme Switcher
+    GtkWidget *bottom_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_set_halign(bottom_bar, GTK_ALIGN_CENTER);
+    const char *names[] = {"Dark", "Light", "Sepia", "Slate", "Neon Pink"};
+    for (int i=0; i<5; i++) {
+        GtkWidget *b = gtk_button_new_with_label(names[i]);
+        g_object_set_data(G_OBJECT(b), "id", GINT_TO_POINTER(i));
+        g_signal_connect(b, "clicked", G_CALLBACK(on_theme_clicked), app);
+        gtk_box_append(GTK_BOX(bottom_bar), b);
+    }
+    gtk_box_append(GTK_BOX(main_box), bottom_bar);
+
+    gtk_window_present(GTK_WINDOW(window));
+}
 
 int main(int argc, char *argv[]) {
-    int i;
-    char *format_string;
-    int show_precision;
-    int show_supercycle;
-    int show_supercycle_num;
-    time_t timer;
-    struct tm *local_time_info;
-    int hts_year;
-    char epoch_char;
-    int hts_day;
-    int supercycle_num;
-    char output_buffer[256];
+    g_setenv("GTK_A11Y", "none", TRUE);
+    HtsApp *app_data = g_new0(HtsApp, 1);
 
-    format_string = NULL;
-    show_precision = 0;
-    show_supercycle = 0;
-    show_supercycle_num = 0;
+    /* Matches Flatpak ID with Underscore */
+    GtkApplication *app = gtk_application_new("com.storcke64.hts_time", G_APPLICATION_DEFAULT_FLAGS);
 
-    // 1. Argument Parsing
-    for (i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            show_help();
-            return 0;
-        }
-        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
-            printf("hts-time version %s\n", APP_VERSION);
-            return 0; // Exit immediately
-        }
-        else if (strcmp(argv[i], "-x") == 0 || strcmp(argv[i], "--unix-std") == 0) {
-            execlp("date", "date", NULL);
-            perror("Failed to execute native 'date' command");
-            return 1;
-        } else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--precision") == 0) {
-            show_precision = 1;
-        } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--supercycle") == 0) {
-            show_supercycle = 1;
-        } else if (strcmp(argv[i], "-S") == 0 || strcmp(argv[i], "--supercycle-num") == 0) {
-            show_supercycle_num = 1;
-        } else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--format") == 0) {
-            if (i + 1 < argc) {
-                format_string = argv[i + 1];
-                i++;
-            }
-        }
-    }
-
-    // 2. Get Current Time and Calculate HTS Components (Run before output)
-    time(&timer);
-    local_time_info = localtime(&timer);
-
-    if (local_time_info == NULL) {
-        fprintf(stderr, "Error: Could not get local time.\n");
-        return 1;
-    }
-
-    hts_day = local_time_info->tm_yday + 1;
-
-    // Call the updated function with the new supercycle argument
-    if (calculate_hts_components(local_time_info->tm_year + 1900, &epoch_char, &hts_year, &hts_day, &supercycle_num) != 0) {
-        return 1;
-    }
-
-    // 2.5. Execute Supercycle Number Output (-S)
-    if (show_supercycle_num) {
-        printf("%d\n", supercycle_num);
-        return 0; // Exit immediately
-    }
-
-    // 2.6. Execute Verbose Supercycle Output (-s)
-    if (show_supercycle) {
-        printf("--- HTS Supercycle Information ---\n");
-        printf("Current Supercycle Number: %d\n", supercycle_num);
-        printf("Current Epoch Letter: %c\n", epoch_char);
-        printf("Epoch Start Year (CE): %d\n", EPOCH_START_CE);
-        printf("Epoch Length: %d years\n", EPOCH_LENGTH);
-        printf("Supercycle Length: %d years\n", SUPER_CYCLE_LENGTH);
-        return 0;
-    }
-
-    // 3. Output Generation (Original logic)
-
-    if (format_string != NULL) {
-        format_output(output_buffer, sizeof(output_buffer), hts_year, epoch_char, hts_day, local_time_info, format_string);
-        printf("%s\n", output_buffer);
-    } else {
-        if (show_precision) {
-            // Calculate time of day fraction
-            double secs_in_day = (double)local_time_info->tm_hour * 3600.0 +
-                                 (double)local_time_info->tm_min * 60.0 +
-                                 (double)local_time_info->tm_sec;
-            double hts_fractional_year = (double)hts_year + (secs_in_day / 86400.0);
-
-            // Default precision output
-            snprintf(output_buffer, sizeof(output_buffer),
-                "HTS: %c%05.3f Epoch %c (%d-%02d-%02d %02d:%02d:%02d)",
-                epoch_char, hts_fractional_year, epoch_char,
-                local_time_info->tm_year + 1900,
-                local_time_info->tm_mon + 1,
-                local_time_info->tm_mday,
-                local_time_info->tm_hour,
-                local_time_info->tm_min,
-                local_time_info->tm_sec
-            );
-            printf("%s\n", output_buffer);
-
-        } else {
-            // Default clean output
-            snprintf(output_buffer, sizeof(output_buffer),
-                "HTS: %c%05d Epoch %c (%d-%02d-%02d %02d:%02d:%02d)",
-                epoch_char, hts_year, epoch_char,
-                local_time_info->tm_year + 1900,
-                local_time_info->tm_mon + 1,
-                local_time_info->tm_mday,
-                local_time_info->tm_hour,
-                local_time_info->tm_min,
-                local_time_info->tm_sec
-            );
-            printf("%s\n", output_buffer);
-        }
-    }
-
-    return 0;
-}
-
-// --- Help Message (Updated for new options) ---
-
-void show_help(void) {
-    printf("\nhts-time - Storcke Human Time System (HTS) Utility\n");
-    printf("Calculates and displays the current date based on the HTS start of %d CE.\n", EPOCH_START_CE);
-    printf("\nUSAGE:\n");
-    printf("  hts-time [OPTIONS]\n");
-    printf("\nOPTIONS:\n");
-    printf("  -h, --help            Show this help message.\n");
-    printf("  -v, --version         Show the application version and exit.\n");
-    printf("  -x, --unix-std        Output the time identically to the native 'date' command.\n");
-    printf("  -p, --precision       Display the HTS Year with the fractional time (decimal precision).\n");
-    printf("  -s, --supercycle      Display verbose HTS epoch and cycle information.\n");
-    printf("  -S, --supercycle-num  Output ONLY the current Supercycle number and exit.\n");
-    printf("  -f, --format <FORMAT> Specify a custom output format.\n");
-    printf("\nHTS FORMAT SPECIFIERS (Used with -f):\n");
-    printf("  %%Z  HTS Epoch and Year (e.g., A40002)\n");
-    printf("  %%E  HTS Epoch Letter (e.g., A)\n");
-    printf("  %%Y  HTS Year (00000-49999)\n");
-    printf("  %%D  HTS Day of Year (001-366)\n");
-    printf("\nEXAMPLE:\n");
-    printf("  hts-time -f \"It is %%A, HTS Epoch %%Z at %%r.\"\n");
-    printf("  hts-time -S\n");
-    printf("\n");
+    g_signal_connect(app, "activate", G_CALLBACK(activate), app_data);
+    int status = g_application_run(G_APPLICATION(app), argc, argv);
+    g_object_unref(app); g_free(app_data); return status;
 }
