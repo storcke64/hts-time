@@ -1,10 +1,9 @@
 [Desktop Entry]
-Name=Human Time System
-Comment=Universal Tool for HTS Notation
+Name=HTS Tool
+Comment=Human Time System Universal Tool
 Exec=hts-time
 Icon=com.storcke64.hts_time
-Type=Application
 Terminal=false
+Type=Application
 Categories=Utility;Clock;
-Keywords=hts;time;clock;notation;conversion;
-StartupNotify=true
+StartupWMClass=hts-time

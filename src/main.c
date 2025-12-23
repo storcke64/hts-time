@@ -1,7 +1,7 @@
 /*
  * Human Time System (HTS) Universal Tool
  * Copyright 2023-2025 Antonio Storcke (Inventor)
- * Licensed under the Apache License, Version 2.0
+ * Integrated GUI & CLI Universal Binary - Version 1.2.2
  */
 
 #include <gtk/gtk.h>
@@ -25,7 +25,21 @@ typedef struct {
     int theme_id;
 } HtsApp;
 
-/* --- ADVANCED SUPPRESSION --- */
+/* --- CLI LOGIC --- */
+static void run_cli_output() {
+    time_t t = time(NULL);
+    struct tm *tm_info = localtime(&t);
+    char date_buffer[128];
+    strftime(date_buffer, sizeof(date_buffer), "%a %b %d %I:%M:%S %p %Z %Y", tm_info);
+
+    char *hts_notation = calculate_hts_string(tm_info->tm_year + 1900);
+    if (hts_notation) {
+        printf("%s  --HTS %s\n", date_buffer, hts_notation);
+        free(hts_notation);
+    }
+}
+
+/* --- LOG SUPPRESSION --- */
 static GLogWriterOutput
 black_hole_writer(GLogLevelFlags log_level, const GLogField *fields,
                   gsize n_fields, gpointer user_data) {
@@ -35,7 +49,7 @@ black_hole_writer(GLogLevelFlags log_level, const GLogField *fields,
     return G_LOG_WRITER_HANDLED;
 }
 
-/* --- SETTINGS PERSISTENCE --- */
+/* --- SETTINGS --- */
 static void save_settings(HtsApp *app) {
     GKeyFile *key_file = g_key_file_new();
     g_key_file_set_boolean(key_file, "Settings", "ShowGregorian", app->show_greg_year);
@@ -53,7 +67,6 @@ static void load_settings(HtsApp *app) {
     g_key_file_free(key_file);
 }
 
-/* --- THEME ENGINE --- */
 static void apply_theme(HtsApp *app) {
     const char *themes[] = {
         "window { background-color: #1e1e1e; color: white; } .card { background-color: #242424; border: 1px solid #303030; }",
@@ -68,23 +81,55 @@ static void apply_theme(HtsApp *app) {
     save_settings(app);
 }
 
-/* --- HANDLERS --- */
+/* --- HELP HUB --- */
+static void on_copy_command(GtkButton *btn, gpointer data) {
+    (void)data;
+    GdkClipboard *clipboard = gdk_display_get_clipboard(gdk_display_get_default());
+    const char *command = "touch ~/.bashrc ~/.bash_aliases && "
+                          "grep -q \".bash_aliases\" ~/.bashrc || echo \"if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi\" >> ~/.bashrc && "
+                          "echo \"alias hts-time='flatpak run com.storcke64.hts_time'\" >> ~/.bash_aliases && "
+                          "source ~/.bashrc && alias hts-time";
+    gdk_clipboard_set_text(clipboard, command);
+    gtk_button_set_label(btn, "Command Copied!");
+}
+
+static void on_dialog_response(GtkDialog *dialog, int response_id, gpointer data) {
+    (void)response_id; (void)data;
+    gtk_window_destroy(GTK_WINDOW(dialog));
+}
+
+static void on_help_clicked(GtkButton *btn, gpointer data) {
+    (void)data;
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("HTS System Help",
+        GTK_WINDOW(gtk_widget_get_root(GTK_WIDGET(btn))),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "Close", GTK_RESPONSE_CLOSE, NULL);
+    g_signal_connect(dialog, "response", G_CALLBACK(on_dialog_response), NULL);
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_box_set_spacing(GTK_BOX(content), 15);
+    gtk_widget_set_margin_top(content, 20);
+    gtk_widget_set_margin_bottom(content, 20);
+    gtk_widget_set_margin_start(content, 20);
+    gtk_widget_set_margin_end(content, 20);
+    GtkWidget *info_label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(info_label), "<b>Terminal CLI Setup</b>\nCopy and paste the setup script to enable 'hts-time' in your terminal.");
+    gtk_label_set_wrap(GTK_LABEL(info_label), TRUE);
+    gtk_box_append(GTK_BOX(content), info_label);
+    GtkWidget *copy_btn = gtk_button_new_with_label("Copy Setup Command");
+    gtk_widget_add_css_class(copy_btn, "suggested-action");
+    g_signal_connect(copy_btn, "clicked", G_CALLBACK(on_copy_command), NULL);
+    gtk_box_append(GTK_BOX(content), copy_btn);
+    GtkWidget *about_label = gtk_label_new(NULL);
+    gtk_label_set_markup(GTK_LABEL(about_label), "<span size='small' alpha='70%'>\nInventor: Antonio Storcke\nSystem Lifespan: 24B Years</span>");
+    gtk_box_append(GTK_BOX(content), about_label);
+    gtk_window_present(GTK_WINDOW(dialog));
+}
+
+/* --- CALC HANDLERS --- */
 static void on_theme_clicked(GtkButton *btn, gpointer data) {
     HtsApp *app = (HtsApp *)data;
     app->theme_id = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(btn), "id"));
     apply_theme(app);
-}
-
-static void on_help_clicked(GtkButton *btn, gpointer data) {
-    (void)btn; (void)data;
-    gtk_show_about_dialog(NULL,
-        "program-name", "HTS Tool",
-        "version", "1.1.9",
-        "copyright", "Copyright © 2023-2025 Antonio Storcke",
-        "authors", (const char *[]) {"Antonio Storcke (Inventor)", NULL},
-        "website", "https://storcke64.github.io/HUMAN-TIME-SYSTEM/",
-        "comments", "System Lifespan: 24B Years. AUTHOR-QR-CODE.png required.",
-        NULL);
 }
 
 static void on_convert_to_hts(GtkButton *btn, gpointer data) {
@@ -128,19 +173,29 @@ static void on_calc_duration(GtkButton *btn, gpointer data) {
     g_free(out);
 }
 
-/* --- CLOCK ENGINE --- */
+/* --- CLOCK ENGINE (Integrated Local/UTC) --- */
 static gboolean update_clock(gpointer data) {
     HtsApp *app = (HtsApp *)data;
-    time_t t = time(NULL); struct tm *tm_info = gmtime(&t);
-    char date_str[64], time_str[64];
-    strftime(date_str, sizeof(date_str), "%A, %B %d, %Y", tm_info);
-    strftime(time_str, sizeof(time_str), "%I:%M:%S %p", tm_info);
-    char *hts = calculate_hts_string(tm_info->tm_year + 1900);
+    time_t t = time(NULL);
+
+    struct tm *tm_utc = gmtime(&t);
+    char hts_year[32], utc_time[64], utc_date[64];
+    strftime(utc_date, sizeof(utc_date), "%A, %B %d, %Y", tm_utc);
+    strftime(utc_time, sizeof(utc_time), "%H:%M:%S", tm_utc);
+    char *hts = calculate_hts_string(tm_utc->tm_year + 1900);
+
+    struct tm *tm_local = localtime(&t);
+    char local_time[64], tz_name[32];
+    strftime(local_time, sizeof(local_time), "%I:%M:%S %p", tm_local);
+    strftime(tz_name, sizeof(tz_name), "%Z", tm_local);
+
     char *markup = g_strdup_printf(
         "<span size='42000' weight='bold' foreground='#3584e4'>%s</span>\n"
-        "<span size='large'>%s</span>\n"
-        "<span size='42000' weight='bold' foreground='#3584e4'>%s</span>",
-        hts, date_str, time_str);
+        "<span size='large' alpha='70%%'>%s</span>\n"
+        "<span size='42000' weight='bold'>%s <span alpha='50%%' size='small'>UTC</span></span>    "
+        "<span size='42000' weight='bold' foreground='#2ec27e'>%s <span alpha='50%%' size='small'>%s</span></span>",
+        hts, utc_date, utc_time, local_time, tz_name);
+
     gtk_label_set_markup(GTK_LABEL(app->label_live_clock), markup);
     free(hts); g_free(markup);
     return TRUE;
@@ -163,45 +218,33 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     load_settings(app);
     GtkWidget *window = gtk_application_window_new(gtk_app);
     gtk_window_set_default_size(GTK_WINDOW(window), 1250, 950);
-    gtk_window_set_icon_name(GTK_WINDOW(window), "com.storcke64.hts-time");
-
+    gtk_window_set_icon_name(GTK_WINDOW(window), "com.storcke64.hts_time");
     app->css_provider = gtk_css_provider_new();
     gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(app->css_provider), 800);
     apply_theme(app);
-
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 25);
-    gtk_widget_set_margin_top(main_box, 30); gtk_widget_set_margin_bottom(main_box, 30);
-    gtk_widget_set_margin_start(main_box, 30); gtk_widget_set_margin_end(main_box, 30);
+    gtk_widget_set_margin_top(main_box, 30);
+    gtk_widget_set_margin_bottom(main_box, 30);
+    gtk_widget_set_margin_start(main_box, 30);
+    gtk_widget_set_margin_end(main_box, 30);
     gtk_window_set_child(GTK_WINDOW(window), main_box);
-
     GtkWidget *header_grid = gtk_grid_new();
     gtk_grid_set_column_spacing(GTK_GRID(header_grid), 25);
     gtk_box_append(GTK_BOX(main_box), header_grid);
-
-    GtkWidget *clock_card = create_card("CURRENT HUMAN TIME NOTATION");
+    GtkWidget *clock_card = create_card("CURRENT HUMAN TIME NOTATION / SYSTEM CLOCKS");
     app->label_live_clock = gtk_label_new(NULL);
     gtk_label_set_justify(GTK_LABEL(app->label_live_clock), GTK_JUSTIFY_CENTER);
     gtk_box_append(GTK_BOX(clock_card), app->label_live_clock);
     gtk_grid_attach(GTK_GRID(header_grid), clock_card, 0, 0, 1, 1);
     gtk_widget_set_hexpand(clock_card, TRUE);
-
-    GtkWidget *prov_card = create_card("PROVENANCE");
-    GtkWidget *prov_label = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(prov_label), "<span size='small' font_family='monospace'>Inventor: Antonio Storcke\nSystem: HTS\nLifespan: 24B Years</span>");
-    gtk_box_append(GTK_BOX(prov_card), prov_label);
-    gtk_grid_attach(GTK_GRID(header_grid), prov_card, 1, 0, 1, 1);
-
     GtkWidget *logo_image = gtk_image_new_from_resource("/com/storcke64/hts/logo.png");
     gtk_image_set_pixel_size(GTK_IMAGE(logo_image), 150);
-    gtk_grid_attach(GTK_GRID(header_grid), logo_image, 2, 0, 1, 1);
-
+    gtk_grid_attach(GTK_GRID(header_grid), logo_image, 1, 0, 1, 1);
     GtkWidget *tool_grid = gtk_grid_new();
     gtk_grid_set_column_spacing(GTK_GRID(tool_grid), 30);
     gtk_grid_set_row_spacing(GTK_GRID(tool_grid), 25);
     gtk_grid_set_column_homogeneous(GTK_GRID(tool_grid), TRUE);
     gtk_box_append(GTK_BOX(main_box), tool_grid);
-
-    /* Calculator Suite */
     GtkWidget *c1 = create_card("GREGORIAN TO HTS");
     app->entry_greg = gtk_entry_new(); gtk_box_append(GTK_BOX(c1), app->entry_greg);
     GtkWidget *b1 = gtk_button_new_with_label("Calculate");
@@ -209,7 +252,6 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_box_append(GTK_BOX(c1), b1);
     app->label_hts_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c1), app->label_hts_result);
     gtk_grid_attach(GTK_GRID(tool_grid), c1, 0, 0, 1, 1);
-
     GtkWidget *c2 = create_card("HTS TO GREGORIAN");
     app->entry_hts = gtk_entry_new(); gtk_box_append(GTK_BOX(c2), app->entry_hts);
     GtkWidget *b2 = gtk_button_new_with_label("Lookup");
@@ -217,22 +259,18 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_box_append(GTK_BOX(c2), b2);
     app->label_greg_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c2), app->label_greg_result);
     gtk_grid_attach(GTK_GRID(tool_grid), c2, 1, 0, 1, 1);
-
     GtkWidget *c3 = create_card("RELATIVE LOOKUP");
-    app->entry_future = gtk_entry_new(); gtk_entry_set_placeholder_text(GTK_ENTRY(app->entry_future), "Future Years");
-    gtk_box_append(GTK_BOX(c3), app->entry_future);
+    app->entry_future = gtk_entry_new(); gtk_box_append(GTK_BOX(c3), app->entry_future);
     GtkWidget *bf = gtk_button_new_with_label("Get Future");
     g_signal_connect(bf, "clicked", G_CALLBACK(on_calc_future), app);
     gtk_box_append(GTK_BOX(c3), bf);
     app->label_future_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c3), app->label_future_result);
-    app->entry_past = gtk_entry_new(); gtk_entry_set_placeholder_text(GTK_ENTRY(app->entry_past), "Past Years");
-    gtk_box_append(GTK_BOX(c3), app->entry_past);
+    app->entry_past = gtk_entry_new(); gtk_box_append(GTK_BOX(c3), app->entry_past);
     GtkWidget *bp = gtk_button_new_with_label("Get Past");
     g_signal_connect(bp, "clicked", G_CALLBACK(on_calc_past), app);
     gtk_box_append(GTK_BOX(c3), bp);
     app->label_past_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c3), app->label_past_result);
     gtk_grid_attach(GTK_GRID(tool_grid), c3, 0, 1, 1, 1);
-
     GtkWidget *c4 = create_card("DURATION");
     app->entry_dur_start = gtk_entry_new(); app->entry_dur_end = gtk_entry_new();
     gtk_box_append(GTK_BOX(c4), app->entry_dur_start); gtk_box_append(GTK_BOX(c4), app->entry_dur_end);
@@ -241,7 +279,6 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
     gtk_box_append(GTK_BOX(c4), b4);
     app->label_dur_result = gtk_label_new("---"); gtk_box_append(GTK_BOX(c4), app->label_dur_result);
     gtk_grid_attach(GTK_GRID(tool_grid), c4, 1, 1, 1, 1);
-
     GtkWidget *footer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
     gtk_widget_set_halign(footer, GTK_ALIGN_CENTER);
     const char *names[] = {"Dark", "Light", "Sepia", "Slate", "Neon"};
@@ -251,25 +288,37 @@ static void activate(GtkApplication *gtk_app, gpointer user_data) {
         g_signal_connect(b, "clicked", G_CALLBACK(on_theme_clicked), app);
         gtk_box_append(GTK_BOX(footer), b);
     }
-    GtkWidget *help_btn = gtk_button_new_with_label("Help & About");
+    GtkWidget *help_btn = gtk_button_new_with_label("Help & Utilities");
     g_signal_connect(help_btn, "clicked", G_CALLBACK(on_help_clicked), app);
     gtk_box_append(GTK_BOX(footer), help_btn);
     gtk_box_append(GTK_BOX(main_box), footer);
-
     g_timeout_add_seconds(1, update_clock, app);
     gtk_window_present(GTK_WINDOW(window));
 }
 
 int main(int argc, char *argv[]) {
-    // 1. Silent Logger: Trap all GTK/GLib noise
-    g_log_set_writer_func(black_hole_writer, NULL, NULL);
-    g_setenv("NO_AT_BRIDGE", "1", TRUE);
+    gboolean force_gui = FALSE;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--gui") == 0) {
+            force_gui = TRUE;
+            for (int j = i; j < argc - 1; j++) argv[j] = argv[j+1];
+            argc--;
+            break;
+        }
+    }
 
-    HtsApp *app_data = g_new0(HtsApp, 1);
-    GtkApplication *app = gtk_application_new("com.storcke64.hts-time", G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(app, "activate", G_CALLBACK(activate), app_data);
-    int status = g_application_run(G_APPLICATION(app), argc, argv);
-    g_object_unref(app);
-    g_free(app_data);
-    return status;
+    if (isatty(STDOUT_FILENO) && !force_gui) {
+        run_cli_output();
+        return 0;
+    } else {
+        g_log_set_writer_func(black_hole_writer, NULL, NULL);
+        g_setenv("NO_AT_BRIDGE", "1", TRUE);
+        HtsApp *app_data = g_new0(HtsApp, 1);
+        GtkApplication *app = gtk_application_new("com.storcke64.hts_time", G_APPLICATION_FLAGS_NONE);
+        g_signal_connect(app, "activate", G_CALLBACK(activate), app_data);
+        int status = g_application_run(G_APPLICATION(app), argc, argv);
+        g_object_unref(app);
+        g_free(app_data);
+        return status;
+    }
 }

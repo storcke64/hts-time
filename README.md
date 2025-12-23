@@ -1,22 +1,36 @@
-# hts-time: The Human Time System Universal Tool
-### Inventor: Antonio Storcke
+# HTS-Time: Human Time System Universal Tool
 
-This is the official suite for the Human Time System (HTS), a cyclical calendar designed for deep time and 64-bit computing.
+**Version 1.2.2**
 
----
+HTS-Time is a professional-grade chronological utility designed for the **Human Time System (HTS)**—a time notation system built for an absolute 24-billion-year lifespan. This tool provides a seamless bridge between Gregorian AD and HTS notation through both a gorgeous Graphical User Interface and a high-performance Command Line Interface.
 
-## ⚖ License & Mandatory Attribution
-Licensed under the **Apache License, Version 2.0**.
 
-**MANDATORY AUTHOR ATTRIBUTION:**
-Per the License, the following files MUST be preserved in the root:
-1.  **`NOTICE`**: Formal provenance and copyright.
-2.  **`AUTHOR-QR-CORE.png`**: The Inventor's proprietary provenance graphic.
 
----
+## 🚀 Key Features
 
-## 🚀 Build Instructions
-To build without stopping at dependencies, use the build button in Gnome Builder or remove the `--stop-at` flag in your terminal command.
+### 🕒 The "Fire" Time Dashboard (GUI)
+* **Tri-Clock Synchronization:** Simultaneously view HTS Era notation, UTC System Time, and Local Time.
+* **Smart Color Coding:** Visual distinction between UTC (Blue) and Local Time (Vibrant Green) for instant readability.
+* **Theme Engine:** Persistent support for five visual modes: Dark, Light, Sepia, Slate, and Neon.
 
-1. **Configure:** `meson setup _build`
-2. **Compile:** `meson compile -C _build`
+### 💻 Universal CLI
+* **Native Feel:** The `hts-time` command mimics the standard Linux `date` output but appends HTS notation.
+* **Context Aware:** One binary handles everything. Type `hts-time` for text or `hts-time --gui` to launch the window.
+* **Integrated Manual:** Full documentation available via `man hts-time`.
+
+### 🛠️ Professional Engineering
+* **Flatpak Ready:** Optimized for GNOME 46 and fully sandboxed for security.
+* **Setup Utility:** Integrated "Help Hub" generates robust terminal alias scripts for you.
+* **Low Overhead:** Built in pure C with GTK4 for maximum performance and minimum resource usage.
+
+
+
+## 📥 Installation
+
+### Building from Source
+Ensure you have `meson`, `ninja`, and the `GTK4` development headers installed.
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/storcke64/hts-time.git](https://github.com/storcke64/hts-time.git)
+   cd hts-time

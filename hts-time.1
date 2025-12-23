@@ -1,79 +1,66 @@
-.TH HTS-TIME 1 "DECEMBER 2025" "1.0" "Storcke Human Time System Manual"
+.TH HTS-TIME 1 "DECEMBER 2025" "1.2.1" "HTS User Manual"
 .SH NAME
-hts-time \- A specialized chronometry utility for the Human Time System (HTS)
-
+hts-time \- Human Time System (HTS) Universal Tool
 .SH SYNOPSIS
 .B hts-time
-[\fIOPTIONS\fR]
-
+[\fI--gui\fR]
 .SH DESCRIPTION
 .B hts-time
-is an advanced temporal tracking utility designed by Antonio Storcke. It implements the
-\fBHuman Time System (HTS)\fR, a chronological framework developed for long-term
-civilizational stability, systems thinking, and organizational leadership.
+is a dual-mode utility for interacting with the Human Time System (HTS).
+By default, the application detects its execution environment to provide the
+most appropriate interface.
 
-Standard Gregorian calendars are often insufficient for tracking deep-time organizational
-shifts. HTS addresses this by utilizing a significantly larger scale for time measurement,
-anchoring modern history within a broader context of human development.
-
-.SH THE ARCHITECTURE OF HTS
-The system is built upon three primary pillars of measurement:
-
-.TP
-\fBThe Base Epoch\fR
-The system is anchored to a start date of \fB-37,977 CE\fR. This point serves as the "Year Zero"
-for the calculation of all subsequent human organizational eras.
-.TP
-\fBEpochs\fR
-Time is divided into segments of \fB50,000 years\fR. Each Epoch is assigned a letter from
-A to Z. The current era falls within Epoch A.
-.TP
-\fBSupercycles\fR
-A Supercycle consists of a full 26-Epoch rotation, totaling \fB1,300,000 years\fR. This
-scale ensures that chronological data remains stable and relevant for the foreseeable
-future of human civilization.
+HTS is a chronological notation system designed for a 24-billion-year lifespan,
+providing a consistent timeline for human civilization across vast eras.
 
 .SH OPTIONS
 .TP
-.B \-s, \-\-supercycle
-Displays the architectural specifications of the HTS. This output provides the
-mathematical constants used in the calculation, including the Supercycle duration
-and the inventor's credentials.
+.B \-\-gui
+Force the application to launch the Graphical User Interface (GUI), even when
+executed from an interactive terminal session.
 .TP
-.B \-v, \-\-version
-Prints the software version (currently 0.1.0) and the build date.
-.TP
-.B \-h, \-\-help
-Prints a summary of command-line arguments and usage patterns.
-.TP
-\fI(No Arguments)\fR
-If executed without flags in a desktop environment, the application launches a
-graphical user interface (GUI) powered by WebKitGTK, displaying a live dashboard
-of the HTS clock.
+.B (No options)
+When executed in a terminal (tty), the program prints the current Gregorian
+time followed by the equivalent HTS notation and exits immediately. When
+executed from a desktop environment or without a tty, it launches the full
+graphical suite.
 
-.SH MATHEMATICAL LOGIC
-The utility calculates the current HTS date by first determining the total years
-elapsed since the Base Epoch:
+.SH CLI OUTPUT FORMAT
+The standard terminal output follows this structure:
 .IP
-\fITotal_Years = Current_Gregorian_Year - (-37,977)\fR
+[Day] [Month] [Date] [Time] [Timezone] [Year] --HTS [HTS-Notation]
 .PP
-The Epoch Year is then derived using the modulo of the Epoch Duration:
-.IP
-\fIHTS_Year = Total_Years MOD 50,000\fR
+Example: Mon Dec 22 11:48:22 PM CST 2025  --HTS 1A-40002
+
+.SH GUI FEATURES
+The graphical interface provides a comprehensive suite of chronological tools:
+.IP \(bu 2
+\fBLive Clock:\fR Real-time synchronization of Gregorian and HTS time.
+.IP \(bu 2
+\fBYear Conversion:\fR Bidirectional conversion between Gregorian AD and HTS.
+.IP \(bu 2
+\fBRelative Lookups:\fR Calculate HTS notations for past or future years.
+.IP \(bu 2
+\fBDuration Span:\fR Calculate the number of years between two dates.
+.IP \(bu 2
+\fBTheme Engine:\fR Five visual modes (Dark, Light, Sepia, Slate, and Neon).
+.IP \(bu 2
+\fBHelp Hub:\fR Integrated utility to facilitate terminal alias setup.
+
+.SH FILES
+.TP
+.I ~/.config/hts_settings.ini
+Stores user preferences including theme selection and display settings.
+.TP
+.I ~/.bash_aliases
+Modified by the Help Hub utility to include the 'hts-time' alias.
 
 .SH AUTHOR
-Invention and system design by \fBAntonio Storcke\fR.
-Graduate of Rogers State University (RSU) in Organizational Leadership.
-.br
-Project Repository: <https://github.com/storcke64/hts-time>
-
-.SH STANDARDS
-This utility is designed to be compliant with modern Linux desktop standards
-and is distributed as a Flatpak for cross-distribution compatibility.
+Inventor: Antonio Storcke (storcke64.github.io)
 
 .SH BUGS
-Report bugs and feature requests to the GitHub issue tracker.
+Report bugs or feature requests at: https://github.com/storcke64/hts-time/issues
 
-.SH COPYRIGHT
-Copyright \(co 2025 Antonio Storcke.
-License: MIT. This is free software: you are free to change and redistribute it.
+.SH SEE ALSO
+.BR date (1),
+.BR timedatectl (1)

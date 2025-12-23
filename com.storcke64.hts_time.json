@@ -4,10 +4,6 @@
     "runtime-version": "46",
     "sdk": "org.gnome.Sdk",
     "command": "hts-time",
-    "build-options": {
-        "strip": false,
-        "no-debuginfo": true
-    },
     "finish-args": [
         "--share=ipc",
         "--socket=fallback-x11",
