@@ -1,0 +1,6 @@
+.git
+.flatpak-builder
+build-dir
+repo
+*.webm
+*.mp4

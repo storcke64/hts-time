@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - Human Time System</title>
+    <style>
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+            --bg-dark: #000000;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100vh;
+            background: var(--bg-dark);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            cursor: none; /* Matches original code preference */
+        }
+        body:hover { cursor: auto; }
+
+        /* =========================================
+           ZONE 1: THE VIEWSCREEN (Clock Page)
+           ========================================= */
+        #viewscreen-zone {
+            flex: 1; /* Takes all space above the dashboard */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #000;
+        }
+
+        /* Status Icons (Bell/Moon) - Top Left */
+        .status-icons {
+            position: absolute; top: 40px; left: 60px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        .icon-bell { width: 50px; height: 50px; background: url('bell.png') no-repeat center/contain; filter: drop-shadow(0 0 15px orange); }
+        .icon-moon { width: 70px; height: 70px; background: url('moon.png') no-repeat center/contain; filter: drop-shadow(0 0 15px var(--neon-blue)); }
+
+        /* HTS Logo - Top Right */
+        .main-logo {
+            position: absolute; top: 20px; right: 30px;
+            width: 150px; height: 150px;
+            background: url('com.storcke64.hts_time.svg') no-repeat center/contain;
+        }
+
+        .day-display {
+            font-size: 24px; color: #666; font-family: 'Courier New', monospace;
+            font-weight: bold; letter-spacing: 8px; text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .main-time {
+            font-size: 260px; font-family: 'Arial Black', sans-serif; color: var(--neon-blue);
+            text-shadow: 0 0 25px var(--neon-glow);
+            letter-spacing: -10px; line-height: 1; margin: 0;
+        }
+
+        .hts-date-line {
+            font-size: 60px; color: var(--neon-blue); font-family: 'Courier New', monospace;
+            font-weight: bold; letter-spacing: 6px; text-transform: uppercase;
+            margin-top: 15px;
+        }
+
+        /* Bottom Left Control Strip */
+        .bottom-left-controls {
+            position: absolute; bottom: 40px; left: 60px;
+            display: flex; align-items: center; gap: 25px;
+        }
+        .time-selector-wrap {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,0.05); padding: 8px 18px;
+            border-radius: 50px; border: 1px solid #333;
+        }
+        .time-label { font-size: 11px; font-weight: bold; color: #666; letter-spacing: 1px; }
+        .toggle-pill { position: relative; width: 44px; height: 22px; background: #222; border-radius: 20px; border: 1px solid #444; cursor: pointer; }
+        .toggle-pill.active .dot { left: 25px; }
+        .toggle-pill .dot { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: var(--neon-blue); border-radius: 50%; transition: 0.3s; }
+
+        .swap-btn-container {
+            width: 42px; height: 42px; border-radius: 50%; border: 2px solid #333;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background: #111;
+        }
+        .swap-icon { width: 28px; height: 28px; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgc3Ryb2tlPSIjMDBkNGZmIiBzdHJva2Utd2lkdGg9IjUiIGZpbGw9Im5vbmUiLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZpbGw9IiMwMGQ0ZmYiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPkhUUzwvdGV4dD48L3N2Zz4=') no-repeat center/contain; }
+
+        /* Gregorian Ref - Bottom Right */
+        .alt-year-ref {
+            position: absolute; bottom: 40px; right: 60px;
+            font-size: 32px; color: var(--neon-blue); font-family: monospace;
+            letter-spacing: 4px;
+        }
+
+        /* =========================================
+           ZONE 2: THE DASHBOARD (Furniture Lift Anchor)
+           ========================================= */
+        #hts-dashboard-wrapper {
+            width: 100%;
+            height: 380px; /* DOCTRINE RULE 2: FIXED HEIGHT */
+            flex-shrink: 0;
+            background: #000;
+            border-top: 2px dashed #39ff14; /* The "Green Line" anchor */
+            z-index: 100;
+        }
+
+        #cp-frame {
+            width: 100%; height: 100%; border: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="viewscreen-zone">
+        <div class="main-logo"></div>
+
+        <div class="status-icons">
+            <div class="icon-bell"></div>
+            <div class="icon-moon"></div>
+        </div>
+
+        <div id="day-display" class="day-display">WEDNESDAY</div>
+        <div id="display-time" class="main-time">10:57</div>
+        <div id="display-hts" class="hts-date-line">A40,003</div>
+
+        <div class="bottom-left-controls">
+            <div class="time-selector-wrap">
+                <span class="time-label">24H</span>
+                <div id="toggle-pill" class="toggle-pill active" onclick="toggleTimeFormat()"><div class="dot"></div></div>
+                <span class="time-label">AM/PM</span>
+            </div>
+            <div class="swap-btn-container">
+                <div class="swap-icon"></div>
+            </div>
+        </div>
+        
+        <div id="display-gregorian" class="alt-year-ref">2026 AD</div>
+    </div>
+
+    <div id="hts-dashboard-wrapper">
+        <iframe 
+            id="cp-frame" 
+            src="control-panel-themes/theme_industrial.html">
+        </iframe>
+    </div>
+
+    <script>
+        let is24Hour = true;
+
+        function toggleTimeFormat() {
+            is24Hour = !is24Hour;
+            document.getElementById('toggle-pill').classList.toggle('active', !is24Hour);
+            updateClock();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+            
+            // 1. Gregorian Data
+            const currentYear = now.getFullYear();
+            let hh = now.getHours();
+            const mm = now.getMinutes().toString().padStart(2, '0');
+            let ampm = "";
+
+            if (!is24Hour) {
+                ampm = hh >= 12 ? " PM" : " AM";
+                hh = hh % 12 || 12;
+            } else {
+                hh = hh.toString().padStart(2, '0');
+            }
+
+            // 2. HTS Calculation
+            const htsYearTotal = (currentYear - 2023) + 40000;
+            const relativeYear = htsYearTotal % 50000;
+            const epochIndex = Math.floor(htsYearTotal / 50000);
+            const epochLetter = String.fromCharCode(65 + (epochIndex % 26));
+
+            // 3. UI Updates
+            document.getElementById('day-display').innerText = days[now.getDay()];
+            document.getElementById('display-time').innerText = `${hh}:${mm}${ampm}`;
+            document.getElementById('display-hts').innerText = `${epochLetter}${relativeYear.toLocaleString()}`;
+            document.getElementById('display-gregorian').innerText = `${currentYear} AD`;
+
+            // 4. Send Data to Control Panel LCD
+            const cp = document.getElementById('cp-frame');
+            if (cp.contentWindow) {
+                cp.contentWindow.postMessage({
+                    type: 'UPDATE_LCD',
+                    main: `${epochLetter}${relativeYear}`,
+                    sub: `SYS_STABLE_CE_${currentYear}`
+                }, '*');
+            }
+        }
+
+        // Initialize
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Listen for Theme interactions (e.g., Settings button)
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'HTS_CMD') {
+                console.log("Shell: Received command ->", event.data.action);
+            }
+        });
+    </script>
+</body>
+</html>

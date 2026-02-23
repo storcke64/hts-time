@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTS Wide Master Deck</title>
+    <style>
+        :root {
+            --chassis: #151515;
+            --faceplate: #222;
+            --vfd-bg: #051005; /* Very dark green-black */
+            --vfd-glow: #39ff14; /* HTS Green */
+            --btn-dark: #1a1a1a;
+            --btn-light: #333;
+        }
+
+        /* STRICT RESET */
+        *, *::before, *::after { box-sizing: border-box; min-width: 0; }
+
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Consolas', monospace;
+            background: transparent;
+            user-select: none;
+            display: block; /* FIX: flex+center shrinks body, poisoning 100vw in parent */
+        }
+
+        /* --- THE APPLIANCE CHASSIS --- */
+        .master-deck {
+            width: 96%;
+            height: 120px;
+            margin: auto auto 0 auto; /* bottom-anchor within block body */
+            background: linear-gradient(to bottom, #2b2b2b, #111);
+            border-top: 1px solid #444;
+            border-left: 1px solid #222;
+            border-right: 1px solid #222;
+            border-bottom: 4px solid #000;
+            border-radius: 4px 4px 0 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            display: flex;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Decorative Rack Ears / Bolts */
+        .master-deck::before, .master-deck::after {
+            content: '+';
+            font-family: monospace; font-weight: bold; color: #000;
+            background: #333;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            position: absolute; top: 50%; transform: translateY(-50%);
+            font-size: 14px; text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .master-deck::before { left: 15px; }
+        .master-deck::after { right: 15px; }
+
+        /* --- LAYOUT GRID --- */
+        .deck-face {
+            flex: 1;
+            margin: 0 50px; /* Space for ears */
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* --- THE VFD SCREEN (The Eye) --- */
+        .vfd-panel {
+            flex: 1; /* Grow to fill width */
+            height: 70px;
+            background: var(--vfd-bg);
+            border: 2px solid #333;
+            border-bottom-color: #444; /* Inset look */
+            border-radius: 2px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,1);
+            position: relative;
+            overflow: hidden; /* CRITICAL: STRETCH PROTECTION */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        /* Glass Reflection */
+        .vfd-panel::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.04), transparent);
+            pointer-events: none;
+        }
+
+        .lcd-main {
+            font-family: 'Consolas', monospace;
+            font-size: 18px;
+            color: var(--vfd-glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Force ... */
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.6);
+            margin-bottom: 4px;
+        }
+
+        .lcd-sub {
+            font-size: 10px;
+            color: rgba(57, 255, 20, 0.5);
+            letter-spacing: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- BUTTON ARRAY --- */
+        .control-cluster {
+            display: flex;
+            gap: 6px;
+            background: #000;
+            padding: 4px;
+            border-radius: 4px;
+            border-bottom: 1px solid #333;
+        }
+
+        .phys-btn {
+            width: 50px; height: 40px;
+            background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
+            border: 1px solid #000;
+            border-top: 1px solid #555;
+            border-radius: 2px;
+            color: #888;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            transition: all 0.05s;
+        }
+
+        .phys-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            border-top: 1px solid #222;
+            color: var(--vfd-glow);
+            background: #111;
+        }
+
+        .btn-large {
+            width: 70px;
+            font-weight: bold;
+            color: #ccc;
+        }
+
+        .btn-settings {
+            margin-left: 8px;
+            border-left: 2px solid #0a0a0a;
+            color: #00d4ff;
+            font-size: 16px;
+        }
+        .btn-settings:active { color: #00d4ff; }
+        
+        /* Play indicator light */
+        .play-led {
+            width: 4px; height: 4px; background: #333; border-radius: 50%;
+            margin-left: 6px; box-shadow: inset 0 1px 2px #000;
+        }
+        .phys-btn.playing .play-led { background: var(--vfd-glow); box-shadow: 0 0 5px var(--vfd-glow); }
+
+        /* --- HIDDEN TOOLS DRAWER --- */
+        .tools-drawer {
+            position: absolute;
+            bottom: 0; left: 50px; right: 50px; /* Align with deck face */
+            height: 0;
+            background: #0a0a0a;
+            border-top: 1px solid #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            transition: bottom 0.3s ease;
+            z-index: 1; /* Behind the deck */
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
+        }
+
+        /* Hover Mechanics: The drawer slides DOWN from the unit when hovering the bottom area */
+        .hover-zone {
+            position: absolute; bottom: -20px; left: 0; right: 0; height: 40px; z-index: 50;
+        }
+        
+        .master-deck:hover + .tools-drawer,
+        .tools-drawer:hover {
+            bottom: -35px; /* Slide out below */
+            height: 35px;
+            border-bottom: 1px solid #333;
+        }
+
+        .tool-link {
+            color: #444; font-size: 10px; font-weight: bold; text-transform: uppercase;
+            text-decoration: none; cursor: pointer; letter-spacing: 1px;
+            padding: 5px 10px;
+        }
+        .tool-link:hover { color: var(--vfd-glow); background: rgba(255,255,255,0.05); }
+        .tool-link.danger:hover { color: #ff3333; }
+
+    </style>
+</head>
+<body>
+
+    <div class="master-deck">
+        <div class="deck-face">
+            
+            <div class="vfd-panel">
+                <div class="lcd-main" id="lcd-main">SYSTEM READY</div>
+                <div class="lcd-sub" id="lcd-sub">DECK A // STANDBY</div>
+            </div>
+
+            <div class="control-cluster">
+                <div class="phys-btn" onclick="sendCmd('prev')" title="Prev">|&#9664;</div>
+                <div class="phys-btn" onclick="sendCmd('rewind')" title="Rewind">&#9664;&#9664;</div>
+                <div class="phys-btn btn-large" id="btn-play" onclick="sendCmd('toggle')">
+                    PLAY <div class="play-led"></div>
+                </div>
+                <div class="phys-btn" onclick="sendCmd('fast_forward')" title="FF">&#9654;&#9654;</div>
+                <div class="phys-btn" onclick="sendCmd('next')" title="Next">&#9654;|</div>
+                <div class="phys-btn btn-settings" onclick="sendCmd('toggle_settings')" title="Settings">&#9881;</div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="tools-drawer">
+        <div class="tool-link" onclick="sendCmd('import')">+ IMPORT TAPE</div>
+        <div class="tool-link" onclick="sendCmd('fullscreen')">FULLSCREEN</div>
+        <div class="tool-link" onclick="sendCmd('manual')">MANUAL</div>
+        <div class="tool-link danger" onclick="sendCmd('exit')">EJECT SYSTEM</div>
+    </div>
+    
+    <div class="hover-zone"></div>
+
+    <script>
+        function sendCmd(action, data) {
+            window.parent.postMessage({ type: 'HTS_CMD', action: action, data: data }, '*');
+        }
+
+        window.addEventListener('message', function(e) {
+            if (e.data.type === 'UPDATE_LCD') {
+                document.getElementById('lcd-main').innerText = e.data.main;
+                document.getElementById('lcd-sub').innerText = e.data.sub;
+                
+                const playBtn = document.getElementById('btn-play');
+                if (e.data.main.includes('PLAYING')) {
+                    playBtn.classList.add('playing');
+                } else {
+                    playBtn.classList.remove('playing');
+                }
+            }
+        });
+
+        // Initialize
+        sendCmd('system_audit', 'THEME_WIDE_MASTER_LOADED');
+    </script>
+
+</body>
+</html>

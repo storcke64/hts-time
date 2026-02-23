@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - New Module</title>
+    <style>
+        :root { 
+            --neon-blue: #00d4ff; 
+            --neon-green: #39ff14; 
+            --neon-gold: #ffd700;
+            --neon-red: #ff3131;
+            --bg-obsidian: #0a0a0a; 
+            --panel-bg: #111111;
+            --border-dim: #222;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+        }
+
+        body { 
+            background-color: var(--bg-obsidian); 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- GLOBAL NAV (Identical Styling) --- */
+        .nav-bar { 
+            width: 100%; 
+            background: #111; 
+            display: flex; 
+            justify-content: center; 
+            gap: 25px; 
+            padding: 20px 0; 
+            border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; 
+            z-index: 100;
+        }
+        .tab-link { 
+            color: #444; 
+            font-weight: bold; 
+            font-size: 11px; 
+            text-decoration: none;
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+            transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { 
+            color: var(--neon-blue); 
+            text-shadow: 0 0 10px var(--neon-glow); 
+        }
+
+        /* --- MAIN STAGE --- */
+        .main-stage {
+            display: flex; 
+            flex-direction: column; 
+            width: 95%; 
+            max-width: 1200px; 
+            height: 85vh; 
+            margin-top: 20px; 
+            position: relative; 
+            padding: 20px;
+        }
+
+        /* LOGO - Fixed Position */
+        .pendulum-logo { 
+            position: absolute; 
+            top: 10px; 
+            right: 20px; 
+            width: 130px; 
+            height: 130px; 
+            z-index: 500;
+            filter: drop-shadow(0 0 8px var(--neon-glow));
+        }
+
+        /* --- CONTENT CONTAINER (Your New Module Starts Here) --- */
+        .module-canvas {
+            flex-grow: 1;
+            border: 1px dashed #333; /* Visual guide for the empty state */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            font-size: 14px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link">CLOCK</a>
+        <a href="converters.html" class="tab-link">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="status.html" class="tab-link">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link">FEATURES</a>
+        <a href="about.html" class="tab-link">ABOUT</a>
+        <a href="empty.html" class="tab-link active">NEW MODULE</a>
+    </nav>
+
+    <div class="main-stage">
+        
+        <img src="com.storcke64.hts_time.svg" class="pendulum-logo" alt="HTS Logo">
+
+        <div class="module-canvas">
+            Empty Stage : Initialized
+        </div>
+
+    </div>
+
+    <script>
+        // Global Listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" || e.key === "Backspace") {
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>

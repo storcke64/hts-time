@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTS Screensaver Chooser</title>
+    <style>
+        body { background: #050505; color: white; margin: 0; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .layout { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 350px; background: #080808; border-right: 1px solid #222; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .header-label { color: #00d4ff; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        .preview-container { width: 100%; height: 180px; background: #000; border: 1px solid #333; position: relative; overflow: hidden; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        #preview-frame { width: 100%; height: 100%; border: none; opacity: 0; transition: opacity 0.5s; position: absolute; top:0; left:0; }
+        #preview-frame.visible { opacity: 1; }
+        .preview-placeholder { color: #333; font-size: 40px; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .ph-sub { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px; }
+        .path-display { font-family: monospace; font-size: 9px; color: #555; text-align: center; word-break: break-all; margin-top: -10px; }
+        .type-ribbon { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 5px; }
+        .type-btn { background: #111; border: 1px solid #333; color: #666; font-size: 9px; padding: 10px 2px; text-align: center; text-transform: uppercase; cursor: pointer; transition: 0.2s; border-radius: 2px; font-weight: bold; letter-spacing: 1px; }
+        .type-btn:hover { background: #222; color: #fff; }
+        .type-btn.active { background: rgba(0, 212, 255, 0.15); border-color: #00d4ff; color: #00d4ff; box-shadow: 0 0 10px rgba(0, 212, 255, 0.1); }
+        .grid { flex: 1; padding: 25px; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; overflow-y: auto; align-content: start; }
+        .card { background: #111; border: 1px solid #333; border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; height: 140px; display: flex; flex-direction: column; }
+        .card:hover { border-color: #555; transform: translateY(-2px); }
+        .card.active { border: 2px solid #00d4ff; background: #161616; box-shadow: 0 0 15px rgba(0,212,255,0.15); }
+        .card-icon { width: 100%; height: 90px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #444; border-bottom: 1px solid #222; }
+        .card-label { padding: 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #bbb; text-align: center; margin-top: auto; }
+        .btn { padding: 15px; border: 1px solid #00d4ff; background: transparent; color: #00d4ff; cursor: pointer; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; width: 100%; box-sizing: border-box; text-align: center; }
+        .btn:hover { background: rgba(0,212,255,0.1); }
+        .btn-apply { background: #00d4ff; color: #000; border: none; opacity: 0.5; pointer-events: none; margin-top: auto; }
+        .btn-apply.ready { opacity: 1; pointer-events: auto; }
+        .film-reel { width: 50px; height: 50px; border: 4px solid #ffd700; border-radius: 50%; position: relative; animation: spin 4s linear infinite; box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        .film-reel::after { content: ''; position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; background: #ffd700; border-radius: 50%; transform: translate(-50%, -50%); }
+        .reel-spoke { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: #ffd700; transform: translateX(-50%); }
+        .reel-spoke:nth-child(2) { transform: translateX(-50%) rotate(90deg); }
+        .reel-spoke:nth-child(3) { transform: translateX(-50%) rotate(45deg); }
+        .reel-spoke:nth-child(4) { transform: translateX(-50%) rotate(135deg); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header-label">Screensaver Chooser</div>
+            <div class="preview-container">
+                <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-popups" referrerpolicy="no-referrer"></iframe>
+                <div class="preview-placeholder" id="ph-container">
+                    <div id="ph-icon">HTS</div>
+                    <div class="ph-sub" id="ph-text">NO PREVIEW</div>
+                </div>
+            </div>
+            <div class="path-display" id="debug-path">Waiting for selection...</div>
+            <div class="type-ribbon" id="type-selector">
+                <div class="type-btn active" onclick="filterType('hts', this)">HTS</div>
+                <div class="type-btn" onclick="filterType('sys', this)">Sys</div>
+                <div class="type-btn" onclick="filterType('win', this)">Win</div>
+                <div class="type-btn" onclick="filterType('x11', this)">X11</div>
+                <div class="type-btn" onclick="filterType('video', this)" style="color:#ffd700; border-color:#554400;">Video</div>
+                <div class="type-btn" onclick="filterType('gl', this)">WebGL</div>
+                <div class="type-btn" onclick="filterType('flash', this)">Flash</div>
+                <div class="type-btn" onclick="filterType('misc', this)">Misc</div>
+            </div>
+            <div id="status-block" style="margin-top: 20px;">
+                <div class="setting-label">Selected Protocol</div>
+                <div id="selected-name" style="font-size: 14px; color:#fff; margin-bottom:10px;">Standby</div>
+            </div>
+            <button id="apply-btn" class="btn btn-apply" onclick="applyScreensaver()">SELECT SCREENSAVER</button>
+            <div style="height:10px"></div>
+            <button class="btn" style="border-color:#39ff14; color:#39ff14;" onclick="triggerScreensaverImport()">+ IMPORT SCREENSAVER</button>
+            <div style="height:10px"></div>
+            <button class="btn" style="border-color:#444; color:#666;" onclick="window.location.href='screensaver.html'">Cancel / Exit</button>
+        </div>
+        <div class="grid" id="saver-grid"></div>
+    </div>
+    <script>
+        console.log("🔥 Screensaver Chooser: Using 'hts://' Protocol");
+
+        // Convert hts:// to http:// for iframe loading
+        function htsToHttp(url) {
+            if (!url || !url.startsWith('hts://')) return url;
+            const port = parseInt(window.hts_current_port || localStorage.getItem('hts_server_port'), 10);
+            if (!port || isNaN(port)) {
+                console.error('[HTS] No valid server port — cannot convert hts:// URL:', url);
+                return null; // null signals caller to abort, not load broken URL
+            }
+            const http = url.replace('hts://', `http://127.0.0.1:${port}/`);
+            console.log('[HTS] Resolved:', url, '→', http);
+            return http;
+        }
+
+        const DATABASE = [
+            { id: 'matrix',      name: 'Matrix Rain',     type: 'hts', icon: 'M',  pathSuffix: 'hts/matrix/index.html' },
+            { id: 'asteroids',   name: 'Asteroids',       type: 'hts', icon: 'A',  pathSuffix: 'hts/asteroids/index.html' },
+            { id: 'basketballs', name: 'Basketballs',     type: 'hts', icon: '🏀', pathSuffix: 'hts/basketballs/index.html' },
+            { id: 'toasters',    name: 'Flying Toasters', type: 'hts', icon: '🍞', pathSuffix: 'hts/toasters/index.html' },
+            { id: 'starfield',   name: 'Hyperspace',      type: 'hts', icon: '★',  pathSuffix: 'hts/starfield/index.html' },
+            { id: 'blackout',    name: 'OLED Blackout',   type: 'hts', icon: '■',  pathSuffix: 'hts/blackout/index.html' },
+            { id: 'sysmon',      name: 'Sys Monitor',     type: 'sys', icon: '≡',  pathSuffix: 'sys/sysmon/index.html' },
+            { id: 'glitch',      name: 'Retro Glitch',    type: 'sys', icon: '⚡',  pathSuffix: 'sys/glitch/index.html' },
+            { id: 'pipes',       name: '3D Pipes',        type: 'win', icon: 'Lr', pathSuffix: 'win/pipes/index.html' },
+            { id: 'maze',        name: '3D Maze',         type: 'win', icon: '▒',  pathSuffix: 'win/maze/index.html' },
+            { id: 'videodeck',   name: 'Video Deck',      type: 'video', icon: '▶', pathSuffix: null },
+            { id: 'swarm',       name: 'X11 Swarm',       type: 'x11', icon: 'x',  pathSuffix: 'x11/swarm/index.html' },
+            { id: 'fluid',       name: 'GL Fluid',        type: 'gl',  icon: 'G',  pathSuffix: 'gl/fluid/index.html' },
+        ];
+        
+        // --- FORCE HTS PROTOCOL ---
+        DATABASE.forEach(saver => {
+            if (saver.pathSuffix) {
+                saver.path = `hts://screensavers/${saver.pathSuffix}`;
+            }
+        });
+        
+        let currentType = 'hts';
+        let pendingSaver = null;
+        let originalSaverPath = null;
+        let activeSaverID = null; 
+        let revertTimer = null;
+
+        function init() {
+            originalSaverPath = localStorage.getItem('hts_active_screensaver');
+            const savedMode = localStorage.getItem('hts_saver_mode');
+            
+            console.log("Active Screensaver Path:", originalSaverPath);
+            
+            if (savedMode === 'VIDEO' || originalSaverPath === 'VIDEO') {
+                activeSaverID = 'videodeck';
+            } else if (originalSaverPath) {
+                const match = DATABASE.find(s => s.path && (originalSaverPath.includes(s.id) || originalSaverPath === s.path));
+                activeSaverID = match ? match.id : null;
+            }
+            restoreActiveSelection();
+        }
+
+        function restoreActiveSelection() {
+            clearTimeout(revertTimer);
+            if (activeSaverID === 'videodeck') {
+                filterType('video', getBtnByType('video'));
+                selectScreensaver(DATABASE.find(s => s.id === 'videodeck'), true);
+            } else if (activeSaverID) {
+                const found = DATABASE.find(s => s.id === activeSaverID);
+                if (found) {
+                    filterType(found.type, getBtnByType(found.type));
+                    selectScreensaver(found, true);
+                } else {
+                    filterType('hts', getBtnByType('hts'));
+                }
+            } else {
+                filterType('hts', getBtnByType('hts'));
+            }
+        }
+
+        function getBtnByType(t) {
+            return Array.from(document.querySelectorAll('.type-btn')).find(b => b.innerText.toLowerCase().includes(t.toLowerCase()) || (t==='win' && b.innerText==='Win'));
+        }
+
+        function filterType(type, element) {
+            currentType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            if(element) element.classList.add('active');
+            renderGrid(DATABASE.filter(s => s.type === type));
+        }
+
+        function renderGrid(list) {
+            const grid = document.getElementById('saver-grid');
+            grid.innerHTML = "";
+            if (list.length === 0) {
+                grid.innerHTML = `<div style='color:#444; padding:20px; font-size:12px; grid-column: 1/-1; text-align:center;'>NO MODULES IN /${currentType.toUpperCase()}/</div>`;
+                return;
+            }
+            list.forEach(saver => {
+                const card = document.createElement('div');
+                card.className = `card ${pendingSaver?.id === saver.id ? 'active' : ''}`;
+                if (saver.type === 'video') card.style.borderColor = "#ffd700";
+                card.innerHTML = `<div class="card-icon" style="${saver.type==='video' ? 'color:#ffd700' : ''}">${saver.icon}</div><div class="card-label" style="${saver.type==='video' ? 'color:#ffd700' : ''}">${saver.name}</div>`;
+                card.onclick = () => selectScreensaver(saver, false);
+                grid.appendChild(card);
+            });
+        }
+
+        function selectScreensaver(saver, isRestore) {
+            pendingSaver = saver;
+            renderGrid(DATABASE.filter(s => s.type === currentType)); 
+            clearTimeout(revertTimer);
+            if (!isRestore && saver.id !== activeSaverID) {
+                revertTimer = setTimeout(() => { restoreActiveSelection(); }, 10000);
+            }
+
+            const frame = document.getElementById('preview-frame');
+            const phContainer = document.getElementById('ph-container');
+            const debugPath = document.getElementById('debug-path');
+            
+            debugPath.innerText = saver.path ? saver.path : "Video Mode";
+
+            if (saver.path && (saver.path.includes('.html') || saver.path.startsWith('hts://'))) {
+                phContainer.style.display = 'flex';
+                phContainer.innerHTML = `<div style="color:#00d4ff; font-size:14px;">⌛ LOADING...</div>`;
+                frame.src = htsToHttp('');
+                frame.classList.remove('visible');
+                
+                let loadTimeout;
+                let hasLoaded = false;
+                
+                frame.onload = function() {
+                    if (hasLoaded) return;
+                    hasLoaded = true;
+                    clearTimeout(loadTimeout);
+                    console.log("✓ Screensaver loaded via HTS");
+                    phContainer.style.display = 'none';
+                    frame.classList.add('visible');
+                    frame.style.opacity = '1';  // CRITICAL: Break the stealth cloak
+                };
+                
+                frame.onerror = function(e) {
+                    if (hasLoaded) return;
+                    hasLoaded = true;
+                    clearTimeout(loadTimeout);
+                    console.error("✗ Failed to load HTS path:", saver.path);
+                    phContainer.style.display = 'flex';
+                    phContainer.innerHTML = `
+                        <div style="color:#ff3333; font-size:14px;">⚠ PROTOCOL ERROR</div>
+                        <div class="ph-sub" style="color:#ff3333;">hts:// handler missing?</div>
+                    `;
+                    frame.classList.remove('visible');
+                };
+                
+                // --- FIXED TRUST PROTOCOL ---
+                setTimeout(() => {
+                    if (!hasLoaded) {
+                        console.log("HTS Protocol: Forcing visibility (Trust Mode)");
+                        phContainer.style.display = 'none';
+                        frame.classList.add('visible');
+                        frame.style.opacity = '1';  // CRITICAL: Break the stealth cloak
+                        hasLoaded = true;
+                    }
+                }, 400);
+                
+                // Fallback timeout
+                loadTimeout = setTimeout(() => {
+                    if (!hasLoaded) {
+                        console.warn("⏱ Preview load timeout");
+                        phContainer.innerHTML = `
+                            <div style="color:#ffd700; font-size:14px;">⚠ TIMEOUT</div>
+                            <div class="ph-sub" style="color:#ffd700;">Backend busy?</div>
+                        `;
+                        frame.classList.remove('visible');
+                    }
+                }, 3000);
+                
+                // Convert hts:// to http:// before loading
+                const httpUrl = htsToHttp(saver.path);
+                if (!httpUrl) {
+                    phContainer.innerHTML = '<div style="color:#ff6600;font-size:13px;">⚠ NO PORT YET</div><div class="ph-sub">Waiting for backend…</div>';
+                    return;
+                }
+                frame.src = httpUrl;
+            } else {
+                frame.classList.remove('visible');
+                phContainer.style.display = 'flex';
+                if (saver.type === 'video') {
+                    phContainer.innerHTML = `<div class="film-reel"><div class="reel-spoke"></div><div class="reel-spoke"></div><div class="reel-spoke"></div><div class="reel-spoke"></div></div><div class="ph-sub" style="color:#ffd700; margin-top:10px;">VIDEO LOOP MODE</div>`;
+                } else {
+                    phContainer.innerHTML = `<div id="ph-icon" style="color:#333">${saver.icon}</div><div class="ph-sub" id="ph-text">NO PREVIEW</div>`;
+                }
+            }
+            
+            document.getElementById('selected-name').innerText = saver.name;
+            document.getElementById('selected-name').style.color = saver.type === 'video' ? '#ffd700' : '#00d4ff';
+            const applyBtn = document.getElementById('apply-btn');
+            applyBtn.classList.add('ready');
+            applyBtn.style.backgroundColor = saver.type === 'video' ? "#ffd700" : "#00d4ff";
+            applyBtn.style.color = "#000";
+            applyBtn.innerText = saver.type === 'video' ? "SELECT VIDEO MODE" : "SELECT SCREENSAVER";
+        }
+
+        function applyScreensaver() {
+            if (!pendingSaver) return;
+            clearTimeout(revertTimer);
+            if (pendingSaver.type === 'video') {
+                localStorage.setItem('hts_saver_mode', 'VIDEO');
+                localStorage.setItem('hts_active_screensaver', 'VIDEO');
+            } else {
+                localStorage.setItem('hts_saver_mode', 'HTML');
+                localStorage.setItem('hts_active_screensaver', pendingSaver.path);
+            }
+            window.location.href = "screensaver.html";
+        }
+
+        function triggerScreensaverImport() {
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                window.webkit.messageHandlers.hts_browser_sync.postMessage("import_screensaver");
+            }
+        }
+
+        window.receiveImportedScreensaver = function(name, path) {
+            let finalPath = path.startsWith('hts://') ? path : 'hts://' + path;
+            const newSaver = { id: 'custom_' + Date.now(), name: name.toUpperCase(), type: 'hts', icon: '📁', path: finalPath, pathSuffix: null, isExternal: true };
+            DATABASE.push(newSaver);
+            if (currentType === 'hts') renderGrid(DATABASE.filter(s => s.type === 'hts'));
+            selectScreensaver(newSaver, false);
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>

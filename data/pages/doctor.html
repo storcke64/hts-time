@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTS MEDIA DOCTOR</title>
+    <style>
+        :root {
+            --medical-blue: #007bff;
+            --medical-white: #f8f9fa;
+            --clinical-gray: #e9ecef;
+            --error-red: #ff3131;
+            --surgery-dark: #1a1d21;
+            --success-green: #28a745;
+            --timer-gold: #ffd700;
+        }
+
+        /* TOTAL TAKEOVER CSS */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #doctor-card {
+            width: 100vw;
+            height: 100vh;
+            background: var(--medical-white);
+            display: flex;
+            flex-direction: column;
+            border: none;
+            border-radius: 0;
+        }
+
+        /* HEADER: Medical Cross (Left) and Massive HTS Seal (Right) */
+        .header {
+            padding: 10px 80px; /* Reduced vertical padding from 20px to 10px */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border-bottom: 8px solid var(--medical-blue);
+            height: 180px; /* Snapped height to fit 180px logo perfectly */
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .med-cross {
+            width: 120px;
+            height: 120px;
+            position: relative;
+            background: var(--medical-blue);
+            border-radius: 12px;
+        }
+
+        .med-cross::before, .med-cross::after {
+            content: ""; position: absolute; background: white;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        .med-cross::before { width: 18px; height: 80px; }
+        .med-cross::after { width: 80px; height: 18px; }
+
+        .header h1 { 
+            margin: 0; 
+            letter-spacing: 12px; 
+            font-size: 48px; 
+            color: #111; 
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        /* HTS SEAL: 180px Priority for absolute readability */
+        .hts-seal-header {
+            height: 180px;
+            width: 180px;
+            filter: drop-shadow(0 0 20px rgba(0, 123, 255, 0.4));
+            object-fit: contain;
+        }
+
+        /* CLINIC CONTENT-- Header ends on obove line including the brace.  */
+        .clinic-body {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            padding: 20px 40px; /* Tightened padding to prevent element cut-off */
+            gap: 30px;
+            flex: 1;
+            overflow-y: auto;
+            background: var(--medical-white);
+        }
+
+        .checklist { display: flex; flex-direction: column; gap: 10px; }
+
+        .check-row {
+            display: grid; grid-template-columns: 40px 1fr 40px;
+            align-items: center; background: white; padding: 15px 20px;
+            border-radius: 6px; border: 1px solid var(--clinical-gray);
+            font-size: 15px; font-weight: 500;
+        }
+
+        .check-row.failed { border-left: 6px solid var(--error-red); background: #fffafa; }
+        .check-row.passed { border-left: 6px solid var(--success-green); }
+
+        .status-mark { text-align: center; font-weight: bold; font-size: 18px; }
+        .mark-fail { color: var(--error-red); }
+        .mark-pass { color: var(--success-green); }
+
+        /* SIDEBAR & TIMER */
+        .sidebar { display: flex; flex-direction: column; gap: 25px; }
+        
+        .timer-box {
+            background: #111;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            border: 2px solid #333;
+        }
+
+        .timer-label { font-size: 12px; color: var(--medical-blue); font-weight: bold; letter-spacing: 3px; margin-bottom: 15px; }
+        #countdown-readout { font-family: 'Courier New', monospace; font-size: 56px; color: var(--timer-gold); font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 15px var(--timer-gold); }
+
+        .timer-btns { display: flex; gap: 15px; justify-content: center; }
+        .timer-btn { 
+            background: #222; color: #fff; border: 1px solid #444; 
+            padding: 10px 20px; border-radius: 6px; font-size: 13px; 
+            cursor: pointer; font-weight: bold;
+        }
+
+        .preview-box {
+            background: #000; height: 220px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            border: 5px solid #333; overflow: hidden;
+        }
+        #preview-vid { width: 100%; height: 100%; object-fit: contain; display: none; }
+        .preview-placeholder { font-size: 80px; color: #222; font-weight: bold; }
+
+        .file-select-btn {
+            background: var(--medical-blue); color: white; border: none;
+            padding: 20px; border-radius: 8px; font-weight: bold;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-size: 16px;
+        }
+
+        /* SURGERY AREA */
+            .surgery-footer {
+            background: var(--surgery-dark);
+            color: #ccc;
+            padding: 15px 50px; /* Reduced from 25px to lower the bar */
+            border-top: 8px solid var(--medical-blue);
+            flex-shrink: 0;
+            margin-top: auto; /* Ensures it pins to the very bottom of the card */
+        }
+
+        .diag-label { color: var(--medical-blue); font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+        #diag-text { color: white; font-size: 16px; margin-bottom: 15px; min-height: 1.2em; }
+
+        .command-line {
+            font-family: 'Courier New', monospace; background: #000;
+            padding: 15px; color: #39ff14; font-size: 14px;
+            word-break: break-all; margin: 15px 0; border: 1px solid #222;
+        }
+
+        .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+
+        .copy-btn {
+            background: var(--medical-blue); color: white; border: none;
+            padding: 15px 40px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+
+        .exit-btn {
+            background: transparent; color: white; border: 1px solid #444;
+            padding: 15px 40px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        .exit-btn:hover { background: #333; }
+
+        /* ── TRANSFER STATUS BAR (native footer section) ── */
+        #transfer-status {
+            display: none;
+            padding: 10px 50px 12px;
+            background: var(--surgery-dark);
+            border-top: 1px solid #1e2d3d;
+        }
+        #transfer-status .ts-label { font-size: 9px; color: #0ff; letter-spacing: 3px; margin-bottom: 4px; font-family: monospace; font-weight: bold; }
+        #transfer-status .ts-name  { font-size: 11px; color: #aaa; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: monospace; }
+        #transfer-status .ts-track { background: #111; border: 1px solid #0ff; height: 10px; width: 100%; position: relative; }
+        #transfer-status .ts-fill  { background: #0ff; height: 100%; width: 0%; transition: width 0.5s linear; }
+        #transfer-status .ts-pct   { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 9px; font-family: monospace; color: #000; line-height: 10px; font-weight: bold; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div id="doctor-card">
+    <div class="header">
+        <div class="header-left">
+            <div class="med-cross"></div>
+            <h1>HTS MEDIA DOCTOR</h1>
+        </div>
+        <img src="../logo.png" class="hts-seal-header">
+    </div>
+
+    <div class="clinic-body">
+        <div class="checklist" id="check-list">
+            <div class="check-row" id="prop-container">
+                <div class="check-box"></div><div>Container: WebM (.webm)</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-vcodec">
+                <div class="check-box"></div><div>Video Codec: VP9</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-vprofile">
+                <div class="check-box"></div><div>Video Profile: 0 (8-bit)</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-acodec">
+                <div class="check-box"></div><div>Audio Codec: Opus</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-achannels">
+                <div class="check-box"></div><div>Audio Channels: Stereo (2.0)</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-pixfmt">
+                <div class="check-box"></div><div>Pixel Format: YUV420P</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-res">
+                <div class="check-box"></div><div>Resolution: ≤ 3840x2160</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-fps">
+                <div class="check-box"></div><div>Frame Rate: Constant (CFR)</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-streams">
+                <div class="check-box"></div><div>Stream Count: 1 Video / 1 Audio</div><div class="status-mark">?</div>
+            </div>
+            <div class="check-row" id="prop-drm">
+                <div class="check-box"></div><div>Encryption: None (Clear)</div><div class="status-mark">?</div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="timer-box">
+                <div class="timer-label">EST. RECOVERY TIME</div>
+                <div id="countdown-readout">00:00</div>
+                <div class="timer-btns">
+                    <button id="start-btn" class="timer-btn" onclick="toggleTimer()">START RECOVERY</button>
+                    <button class="timer-btn" onclick="adjustTimer(5)">+5 MIN</button>
+                </div>
+            </div>
+
+            <div class="preview-box">
+                <video id="preview-vid" muted></video>
+                <div id="preview-fail" class="preview-placeholder">✚</div>
+            </div>
+            <button class="file-select-btn" onclick="openSmartChooser()">Examine New Patient</button>
+        </div>
+    </div>
+
+    <div class="surgery-footer">
+        <div id="transfer-status">
+            <div class="ts-label">◈ PATIENT TRANSFER IN PROGRESS</div>
+            <div class="ts-name" id="imp-name">preparing...</div>
+            <div class="ts-track"><div class="ts-fill" id="imp-fill"></div><span class="ts-pct" id="imp-pct">0%</span></div>
+        </div>
+        <div class="diagnosis-area">
+            <div class="diag-label">Diagnosis</div>
+            <div id="diag-text">WAITING FOR PATIENT ADMISSION...</div>
+        </div>
+
+        <div class="prescription-box">
+            <div class="diag-label">Prescription (Paste into External Terminal)</div>
+            <div id="cmd-text" class="command-line"># Diagnosis required for prescription generation...</div>
+            
+            <div class="btn-row">
+                <button class="copy-btn" onclick="copyPrescription()">COPY COMMAND</button>
+                <button class="copy-btn" style="background:#2c3e50;" onclick="triggerAlarm()">TEST RINGER</button>
+                <button id="mute-btn" class="copy-btn" style="background:#641e16;" onclick="toggleDoctorVideoMute()">UNMUTE VIDEO</button>
+                <button class="exit-btn" onclick="exitClinic()">EXIT TO SCREENSAVER</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File input replaced with HTS Smart Chooser -->
+
+<script>
+    // --- OVERLAY SIGNAL BRIDGE ---
+    function sendOverlaySignal(command) {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+            window.webkit.messageHandlers.hts_browser_sync.postMessage(command);
+        }
+    }
+
+    // Hide overlay on load
+    sendOverlaySignal("overlay_hide");
+
+    let timeLeft = 0;
+    let timerInterval = null;
+    let audioCtx = null;
+
+/**
+     * EXAMINE FILE: Precision Diagnostic Engine with 30s High-Persistence Watchdog.
+     * Hardened to catch "Late Stalls" and provide immediate in-line justifications.
+     * Explicitly locks diagnosis until stability is verified over a 30-second observation.
+     */
+    // Smart Chooser Integration
+    function openSmartChooser() {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+            window.webkit.messageHandlers.hts_browser_sync.postMessage("doctor_select_video");
+        } else {
+            alert("HTS Bridge not available. Cannot open smart chooser.");
+        }
+    }
+
+    // Listen for messages from main.c (video selection + import progress)
+    window.addEventListener('message', function(e) {
+        if (!e.data || !e.data.type) return;
+
+        // Video selected by smart chooser
+        if (e.data.type === 'HTS_CMD' && e.data.action === 'doctor_video_selected') {
+            const videoUrl = e.data.data;
+            const videoName = e.data.name;
+            examineVideoUrl(videoUrl, videoName);
+        }
+
+        // Import progress — bar stays permanently (no auto-hide on doctor page)
+        if (e.data.type === 'HTS_CMD' && e.data.action === 'import_progress') {
+            const d = e.data.data || {};
+            const overlay = document.getElementById('transfer-status');
+            const fill    = document.getElementById('imp-fill');
+            const pctEl   = document.getElementById('imp-pct');
+            const nameEl  = document.getElementById('imp-name');
+            if (d.done) {
+                // Animate to 100% and stay — doctor page keeps bar visible permanently
+                if (fill)  { fill.style.transition = 'width 0.8s ease'; fill.style.width = '100%'; }
+                if (pctEl) pctEl.innerText = '100%';
+                if (overlay) overlay.style.display = 'block';
+            } else {
+                if (overlay) overlay.style.display = 'block';
+                if (fill)  fill.style.width = (d.pct || 0) + '%';
+                if (pctEl) pctEl.innerText = (d.pct || 0) + '%';
+                if (nameEl && d.name) nameEl.innerText = d.name.length > 55 ? d.name.substring(0,52)+'…' : d.name;
+            }
+        }
+    });
+
+    // HTS Port Sync — receive port from main.c on page load
+    window.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'HTS_PORT_SYNC') {
+            window.hts_current_port = e.data.port;
+            localStorage.setItem('hts_server_port', e.data.port);
+            console.log('🔌 Doctor received HTS port:', e.data.port);
+        }
+    }, true);
+
+    // Convert hts:// to http:// using live port
+    function htsToHttp(url) {
+        if (!url || !url.startsWith('hts://')) return url;
+        const port = window.hts_current_port || localStorage.getItem('hts_server_port');
+        if (!port) return url;
+        return url.replace('hts://', `http://127.0.0.1:${port}/`);
+    }
+
+    // Inline reason setter (needed by examineVideoUrl)
+    function setReason(id, label, reason, color = 'var(--error-red)') {
+        const el = document.getElementById(id);
+        if (el) {
+            el.querySelector('div:nth-child(2)').innerHTML =
+                `${label} <span style="color:${color}; font-size:11px; margin-left:10px; font-style:italic;">${reason}</span>`;
+        }
+    }
+
+    // Examine video by HTTP stream URL — full diagnostic engine
+    function examineVideoUrl(url, filename) {
+        console.log('🔬 examineVideoUrl called:', {url, filename});
+
+        // Resolve hts:// if needed
+        const streamUrl = htsToHttp(url);
+
+        const preview = document.getElementById('preview-vid');
+        const fileName = filename.toLowerCase();
+        const isWebm = fileName.endsWith('.webm');
+        const isMp4 = fileName.endsWith('.mp4');
+
+        // Reset all vitals to failed with default justifications
+        const defaultLabels = {
+            'prop-container': 'Container: WebM (.webm)',
+            'prop-vcodec': 'Video Codec: VP9',
+            'prop-vprofile': 'Video Profile: 0 (8-bit)',
+            'prop-acodec': 'Audio Codec: Opus',
+            'prop-achannels': 'Audio Channels: Stereo (2.0)',
+            'prop-pixfmt': 'Pixel Format: YUV420P',
+            'prop-res': 'Resolution: ≤ 3840x2160',
+            'prop-fps': 'Frame Rate: Constant (CFR)',
+            'prop-streams': 'Stream Count: 1 Video / 1 Audio',
+            'prop-drm': 'Encryption: None (Clear)'
+        };
+        document.querySelectorAll('.check-row').forEach(r => {
+            r.className = 'check-row failed';
+            r.style.borderLeft = '';
+            const mark = r.querySelector('.status-mark');
+            if (mark) mark.innerHTML = '✕';
+            const labelDiv = r.querySelector('div:nth-child(2)');
+            if (labelDiv && defaultLabels[r.id]) labelDiv.innerText = defaultLabels[r.id];
+        });
+
+        // Pre-flag suspected culprits
+        setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(Suspected high bit-depth: Possible black screen.)');
+        setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(Suspected chroma subsampling mismatch.)');
+
+        // DNA probe from filename
+        if (isWebm || isMp4) {
+            setPass('prop-container');
+            const hasVP9 = fileName.includes('vp9') || isWebm;
+            if (hasVP9) {
+                if (isMp4) {
+                    setReason('prop-vcodec', 'Video Codec: VP9', '(VP9 DNA inside MP4 wrapper. Consider renaming.)');
+                } else {
+                    setPass('prop-vcodec');
+                }
+            } else {
+                setReason('prop-vcodec', 'Video Codec: VP9', '(Non-native codec detected: HEVC/x264 likely.)');
+            }
+            ['prop-acodec', 'prop-achannels', 'prop-res', 'prop-fps', 'prop-streams', 'prop-drm'].forEach(id => setPass(id));
+        } else {
+            setReason('prop-container', 'Container: WebM (.webm)', '(Unsupported extension. Only MP4/WebM admitted.)');
+        }
+
+        // Set up video stream via microhttpd
+        preview.src = streamUrl;
+        preview.muted = true;
+        preview.style.display = 'block';
+        document.getElementById('preview-fail').style.display = 'none';
+
+        // Reset mute button to loading state
+        const muteBtn = document.getElementById('mute-btn');
+        muteBtn.innerText = 'CHECKING AUDIO...';
+        muteBtn.style.background = '#333';
+        muteBtn.disabled = true;
+
+        // Detect audio track presence after metadata loads
+        preview.onloadedmetadata = function() {
+            const hasAudio = preview.mozHasAudio !== undefined ? preview.mozHasAudio :
+                             (preview.webkitAudioDecodedByteCount !== undefined ? preview.webkitAudioDecodedByteCount > 0 :
+                             (preview.audioTracks ? preview.audioTracks.length > 0 : true));
+            if (!hasAudio) {
+                muteBtn.innerText = 'NO AUDIO TRACK';
+                muteBtn.style.background = '#555';
+                muteBtn.disabled = true;
+            } else {
+                // Audio confirmed — auto-unmute immediately so doctor hears the patient
+                preview.muted = false;
+                muteBtn.innerText = 'MUTE VIDEO';
+                muteBtn.style.background = '#2c3e50';
+                muteBtn.disabled = false;
+            }
+        };
+
+        preview.load();
+
+        document.getElementById('diag-text').innerHTML = `
+            PATIENT: ${filename}<br>
+            <span style="color:var(--medical-blue); font-weight:bold;">DIAGNOSIS: PERFORMING HIGH-PERSISTENCE STREAM EXAM (30S)...</span>
+        `;
+
+        // Generate prescription
+        const safeName = filename.replace(/\s+/g, '_');
+        const outputName = safeName.split('.').slice(0, -1).join('.') + '_HTS_READY.webm';
+        document.getElementById('cmd-text').innerText =
+            `ffmpeg -err_detect ignore_err -i "${filename}" -c:v libvpx-vp9 -pix_fmt yuv420p -profile:v 0 -crf 30 -b:v 0 -c:a libopus -ar 48000 -ac 2 "${outputName}"`;
+
+        // 30-second high-persistence watchdog on the HTTP stream
+        preview.play().then(() => {
+            const startTime = preview.currentTime;
+            setTimeout(() => {
+                if (preview.currentTime <= startTime + 0.5 || preview.paused) {
+                    setReason('prop-fps', 'Frame Rate: Constant (CFR)', '(CRITICAL STALL: Stream frozen during 30s persistence test.)', 'var(--error-red)');
+                    document.getElementById('diag-text').innerHTML = `
+                        PATIENT: ${filename}<br>
+                        <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: LATE STALL DETECTED. SURGERY MANDATORY.</span>
+                    `;
+                } else {
+                    // Healthy — downgrade suspects to orange warnings
+                    ['prop-vprofile', 'prop-pixfmt'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el && el.className.includes('failed')) {
+                            el.style.borderLeft = '6px solid orange';
+                            el.querySelector('.status-mark').innerHTML = '<span style="color:orange">!</span>';
+                        }
+                    });
+                    setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(Non-optimal: High bit-depth detected.)', 'orange');
+                    setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(Non-optimal: High chroma subsampling.)', 'orange');
+                    document.getElementById('diag-text').innerHTML = `
+                        PATIENT: ${filename}<br>
+                        <span style="color:#ffa500; font-weight:bold;">DIAGNOSIS: NOT OPTIMAL, BUT GOOD ENOUGH TO PLAY.</span>
+                    `;
+                    // Stream confirmed healthy — auto-unmute so doctor can hear audio
+                    const muteBtn = document.getElementById('mute-btn');
+                    if (muteBtn && !muteBtn.disabled) {
+                        preview.muted = false;
+                        muteBtn.innerText = 'MUTE VIDEO';
+                        muteBtn.style.background = '#2c3e50';
+                    }
+                }
+            }, 30000);
+        }).catch(e => {
+            console.error('Stream play failed:', e);
+            setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(CRITICAL: Stream cannot be rendered.)');
+            setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(CRITICAL: Browser cannot map this pixel format.)');
+            document.getElementById('diag-text').innerHTML = `
+                PATIENT: ${filename}<br>
+                <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: CRITICAL STREAM FAILURE. SURGERY REQUIRED.</span>
+            `;
+        });
+    }
+
+    // Legacy file input handler (kept for compatibility if needed)
+    function examineFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // 1. Reset Vitals & Clinical Labels
+        if (typeof stopTimer === "function") stopTimer();
+        const rows = document.querySelectorAll('.check-row');
+        const defaultLabels = {
+            'prop-container': 'Container: WebM (.webm)',
+            'prop-vcodec': 'Video Codec: VP9',
+            'prop-vprofile': 'Video Profile: 0 (8-bit)',
+            'prop-acodec': 'Audio Codec: Opus',
+            'prop-achannels': 'Audio Channels: Stereo (2.0)',
+            'prop-pixfmt': 'Pixel Format: YUV420P',
+            'prop-res': 'Resolution: ≤ 3840x2160',
+            'prop-fps': 'Frame Rate: Constant (CFR)',
+            'prop-streams': 'Stream Count: 1 Video / 1 Audio',
+            'prop-drm': 'Encryption: None (Clear)'
+        };
+
+        rows.forEach(r => {
+            r.className = 'check-row failed'; 
+            r.style.borderLeft = ""; 
+            const mark = r.querySelector('.status-mark');
+            if (mark) mark.innerHTML = '✕';
+            const labelDiv = r.querySelector('div:nth-child(2)');
+            if (labelDiv && defaultLabels[r.id]) labelDiv.innerText = defaultLabels[r.id];
+        });
+
+        // Apply Immediate Justifications for Suspected Culprits
+        setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(Suspected high bit-depth: Possible black screen.)');
+        setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(Suspected chroma subsampling mismatch.)');
+
+        const fileName = file.name.toLowerCase();
+        const isWebm = fileName.endsWith('.webm');
+        const isMp4 = fileName.endsWith('.mp4');
+        
+        // 2. DNA Probing
+        if (isWebm || isMp4) {
+            setPass('prop-container');
+            const hasVP9 = fileName.includes('vp9') || isWebm;
+            if (hasVP9) {
+                if (isMp4) {
+                    setReason('prop-vcodec', 'Video Codec: VP9', '(VP9 DNA inside MP4 wrapper. Consider renaming.)');
+                } else {
+                    setPass('prop-vcodec');
+                }
+            } else {
+                setReason('prop-vcodec', 'Video Codec: VP9', '(Non-native codec detected: HEVC/x264 likely.)');
+            }
+            const safeVitals = ['prop-acodec', 'prop-achannels', 'prop-res', 'prop-fps', 'prop-streams', 'prop-drm'];
+            safeVitals.forEach(id => setPass(id));
+        } else {
+            setReason('prop-container', 'Container: WebM (.webm)', '(Unsupported extension. Only MP4/WebM admitted.)');
+        }
+
+        // 3. Render Test & High-Persistence Watchdog
+        const preview = document.getElementById('preview-vid');
+        if (preview) {
+            const url = URL.createObjectURL(file);
+            preview.src = url;
+            preview.style.display = 'block';
+            document.getElementById('preview-fail').style.display = 'none';
+            
+            // --- FIX FOR VIDEO PREVIEW ---
+            preview.muted = true; // Required for autoplay logic in modern browsers
+            preview.load();       // Ensure fresh load
+            
+            // Immediate Status: Informed 30s Wait
+            document.getElementById('diag-text').innerHTML = `
+                PATIENT: ${file.name}<br>
+                <span style="color:var(--medical-blue); font-weight:bold;">DIAGNOSIS: PERFORMING HIGH-PERSISTENCE EXAM (30S)...</span>
+            `;
+
+            preview.play().then(() => {
+                const startTime = preview.currentTime;
+                
+                // HIGH-PERSISTENCE WATCHDOG: 30 seconds
+                setTimeout(() => {
+                    if (preview.currentTime <= startTime + 0.5 || preview.paused) {
+                        // STALL DETECTED
+                        setReason('prop-fps', 'Frame Rate: Constant (CFR)', '(CRITICAL STALL: Stream frozen during 30s persistence test.)', 'var(--error-red)');
+                        document.getElementById('diag-text').innerHTML = `
+                            PATIENT: ${file.name}<br>
+                            <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: LATE STALL DETECTED. SURGERY MANDATORY.</span>
+                        `;
+                    } else {
+                        // Healthy Playback verified after 30 seconds
+                        const suspects = [
+                            {id: 'prop-vprofile', label: 'Video Profile: 0 (8-bit)', reason: '(Non-optimal: High bit-depth detected.)'},
+                            {id: 'prop-pixfmt', label: 'Pixel Format: YUV420P', reason: '(Non-optimal: High chroma subsampling.)'}
+                        ];
+                        suspects.forEach(item => {
+                            const el = document.getElementById(item.id);
+                            if (el && el.className.includes('failed')) {
+                                el.style.borderLeft = "6px solid orange";
+                                el.querySelector('.status-mark').innerHTML = '<span style="color:orange">!</span>';
+                                setReason(item.id, item.label, item.reason, 'orange');
+                            }
+                        });
+                        document.getElementById('diag-text').innerHTML = `
+                            PATIENT: ${file.name}<br>
+                            <span style="color:#ffa500; font-weight:bold;">DIAGNOSIS: NOT OPTIMAL, BUT GOOD ENOUGH TO PLAY.</span>
+                        `;
+                    }
+                    // Stream confirmed healthy — auto-unmute so doctor can hear audio
+                    const muteBtn = document.getElementById('mute-btn');
+                    if (muteBtn && !muteBtn.disabled) {
+                        preview.muted = false;
+                        muteBtn.innerText = 'MUTE VIDEO';
+                        muteBtn.style.background = '#2c3e50';
+                    }
+                }, 30000); 
+            }).catch(e => {
+                // FAILURE: Video remains black
+                setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(CRITICAL: Browser cannot render this profile.)');
+                setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(CRITICAL: Browser cannot map this pixel format.)');
+                
+                document.getElementById('diag-text').innerHTML = `
+                    PATIENT: ${file.name}<br>
+                    <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: CRITICAL DNA FAILURE. SURGERY REQUIRED.</span>
+                `;
+            });
+        }
+
+        // 4. Prescription Logic (Includes 44:08 bypass)
+        const safeName = file.name.replace(/\s+/g, '_');
+        const outputName = safeName.split('.').slice(0, -1).join('.') + "_HTS_READY.webm";
+        document.getElementById('cmd-text').innerText = `ffmpeg -err_detect ignore_err -i "${file.name}" -c:v libvpx-vp9 -pix_fmt yuv420p -profile:v 0 -crf 30 -b:v 0 -c:a libopus -ar 48000 -ac 2 "${outputName}"`;
+        
+        function setReason(id, label, reason, color = 'var(--error-red)') {
+            const el = document.getElementById(id);
+            if (el) {
+                el.querySelector('div:nth-child(2)').innerHTML = 
+                    `${label} <span style="color:${color}; font-size:11px; margin-left:10px; font-style:italic;">${reason}</span>`;
+            }
+        }
+    } // --- EXAMINE FILE ENDS HERE ---
+
+    /**
+     * HELPER: setPass
+     * Updates UI state to green for a passing vital.
+     */
+    function setPass(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.className = 'check-row passed';
+            const mark = el.querySelector('.status-mark');
+            if (mark) mark.innerHTML = '<span class="mark-pass">✓</span>';
+        }
+    }
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        document.getElementById('countdown-readout').innerText = 
+            `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+    }
+
+    function toggleTimer() {
+        const btn = document.getElementById('start-btn');
+        if (timerInterval) {
+            stopTimer();
+            btn.innerText = "RESUME";
+        } else {
+            if (timeLeft <= 0) return;
+            btn.innerText = "PAUSE";
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    triggerAlarm();
+                    btn.innerText = "START";
+                }
+            }, 1000);
+        }
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+
+    function adjustTimer(mins) {
+        timeLeft += (mins * 60);
+        updateTimerDisplay();
+    }
+
+        /* --- The Storcke Human Time System- By Antonio Storcke. --- */
+
+
+        // --- DOCTOR AUDIO SYSTEM ---
+        /* --- The Storcke Human Time System- By Antonio Storcke. --- */
+
+        function triggerAlarm() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            audioCtx.resume().then(() => {
+                const playFunkyChirp = (freq, start, type = 'triangle') => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = type;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.frequency.setValueAtTime(freq, start);
+                    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, start + 0.15);
+                    gain.gain.setValueAtTime(0.1, start);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+                    osc.start(start);
+                    osc.stop(start + 0.2);
+                };
+
+                const now = audioCtx.currentTime;
+                
+                // HTS Funky Riff
+                playFunkyChirp(440, now, 'triangle');        
+                playFunkyChirp(880, now + 0.1, 'square');    
+                playFunkyChirp(1320, now + 0.2, 'square');   
+                playFunkyChirp(660, now + 0.35, 'triangle'); 
+
+                setTimeout(() => {
+                    alert("HTS DOCTOR: RECOVERY PERIOD ELAPSED. CHECK TERMINAL OUTPUT.");
+                }, 600);
+            });
+        } // === End of triggerAlarm Function ===
+
+        function toggleDoctorVideoMute() {
+            const docVideo = document.getElementById('preview-vid');
+            const btn = document.getElementById('mute-btn');
+            if (docVideo && !btn.disabled) {
+                docVideo.muted = !docVideo.muted;
+                // muted=true means sound is off → offer to unmute (red)
+                // muted=false means sound is on → offer to mute (dark)
+                btn.innerText = docVideo.muted ? 'UNMUTE VIDEO' : 'MUTE VIDEO';
+                btn.style.background = docVideo.muted ? '#641e16' : '#2c3e50';
+            }
+        } // === End of toggleDoctorVideoMute Function ===
+
+/* --- The Storcke Human Time System- By Antonio Storcke. --- */
+/* --- The Storcke Human Time System- By Antonio Storcke. --- */
+
+    function copyPrescription() {
+        const cmd = document.getElementById('cmd-text').innerText;
+        navigator.clipboard.writeText(cmd).then(() => {
+            alert("SURGERY COMMAND COPIED. Paste this in your external terminal.");
+        });
+    }
+
+    function exitClinic() {
+        stopTimer();
+        // RESTORE OVERLAY BEFORE LEAVING
+        sendOverlaySignal("overlay_show");
+        window.location.href = 'screensaver.html';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/storcke64/hts_time">
+    <file alias="index.html">index.html</file>
+    <file alias="pages/theme_original.html">pages/theme_original.html</file>
+    <file alias="hts-doctor/doctor.html">hts-doctor/doctor.html</file>
+    <file alias="com.storcke64.hts_time.svg">com.storcke64.hts_time.svg</file>
+
+    <file alias="data/screensavers/fish_tank.webm">data/screensavers/fish_tank.webm</file>
+    <file alias="data/screensavers/deep_space.webm">data/screensavers/deep_space.webm</file>
+  </gresource>
+</gresources>

@@ -1,0 +1,30 @@
+# HTS Project Build Directories
+_build/
+build-dir/
+.flatpak-builder/
+
+# Compiled Binaries & C Artifacts
+hts-time
+*.o
+*.a
+*.la
+*.so
+*.lo
+
+# Build Logs
+meson-logs/
+flatpak-builder.log
+
+# System & Editor Junk
+.DS_Store
+*~
+*.swp
+.vscode/
+.idea/
+
+# HTS Specific data backups (Optional)
+data/pages/*.tmp
+.flatpak-builder/
+build-dir/
+.flatpak-builder/
+build-dir/

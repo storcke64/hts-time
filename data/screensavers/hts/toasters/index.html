@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="saver"></canvas>
+
+    <script>
+        const canvas = document.getElementById('saver');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // --- ASSET GENERATION (The Art Studio) ---
+        // We need 3 images: Toaster Wings Up, Toaster Wings Down, and Toast.
+        
+        const toasterUp = document.createElement('canvas');
+        const toasterDown = document.createElement('canvas');
+        const toastImg = document.createElement('canvas');
+        
+        const size = 64; // Base size of sprites
+        toasterUp.width = size * 2; toasterUp.height = size; // Wide for wings
+        toasterDown.width = size * 2; toasterDown.height = size;
+        toastImg.width = size; toastImg.height = size;
+
+        function drawToaster(c, wingsUp) {
+            const cx = c.getContext('2d');
+            const w = size; 
+            const h = size * 0.7;
+            const x = size/2; // Center offset
+            const y = size * 0.15;
+
+            // 1. The Wing (Back)
+            cx.beginPath();
+            if(wingsUp) {
+                cx.moveTo(x + 20, y + 10);
+                cx.quadraticCurveTo(x - 30, y - 20, x + 10, y + 20); // Up
+            } else {
+                cx.moveTo(x + 20, y + 20);
+                cx.quadraticCurveTo(x - 30, y + 50, x + 10, y + 30); // Down
+            }
+            cx.fillStyle = '#DDD';
+            cx.fill(); cx.stroke();
+
+            // 2. The Body (Chrome)
+            let grad = cx.createLinearGradient(x, y, x, y+h);
+            grad.addColorStop(0, '#FFF');
+            grad.addColorStop(0.2, '#CCC');
+            grad.addColorStop(0.5, '#888'); // Chrome reflection
+            grad.addColorStop(1, '#444');
+            
+            cx.beginPath();
+            // Rounded box shape
+            cx.moveTo(x, y);
+            cx.lineTo(x + w, y);
+            cx.quadraticCurveTo(x + w + 10, y + h/2, x + w, y + h);
+            cx.lineTo(x, y + h);
+            cx.quadraticCurveTo(x - 10, y + h/2, x, y);
+            cx.fillStyle = grad;
+            cx.fill();
+            cx.lineWidth = 2;
+            cx.strokeStyle = '#222';
+            cx.stroke();
+
+            // 3. Details (Slots & Knob)
+            cx.fillStyle = '#111';
+            cx.fillRect(x + 10, y + 5, 5, 20); // Slot 1
+            cx.fillRect(x + 25, y + 5, 5, 20); // Slot 2
+            
+            cx.fillStyle = '#333';
+            cx.fillRect(x + w - 5, y + h/2, 8, 5); // Knob
+
+            // 4. The Wing (Front)
+            cx.beginPath();
+            if(wingsUp) {
+                cx.moveTo(x + 30, y + 15);
+                cx.quadraticCurveTo(x - 40, y - 30, x + 15, y + 25); // Up high
+            } else {
+                cx.moveTo(x + 30, y + 25);
+                cx.quadraticCurveTo(x - 40, y + 60, x + 15, y + 35); // Down low
+            }
+            cx.fillStyle = '#FFF';
+            cx.fill(); cx.stroke();
+        }
+
+        function drawToast(c) {
+            const cx = c.getContext('2d');
+            const s = size * 0.6;
+            const x = size * 0.2;
+            const y = size * 0.2;
+            
+            cx.fillStyle = '#d4a355'; // Bread color
+            cx.strokeStyle = '#8c5e26'; // Crust
+            cx.lineWidth = 3;
+            
+            cx.beginPath();
+            cx.roundRect(x, y, s, s, 5);
+            cx.fill();
+            cx.stroke();
+            
+            // Pores
+            cx.fillStyle = '#bfa06d';
+            for(let i=0; i<5; i++) {
+                cx.beginPath();
+                cx.arc(x + Math.random()*s, y + Math.random()*s, 2, 0, Math.PI*2);
+                cx.fill();
+            }
+        }
+
+        // Generate the Art
+        drawToaster(toasterUp, true);
+        drawToaster(toasterDown, false);
+        drawToast(toastImg);
+
+        // --- THE FLIGHT ENGINE ---
+        
+        const OBJECTS = [];
+        const COUNT = 15; // Toasters
+        const TOAST_COUNT = 8; // Slices
+
+        class Flyer {
+            constructor(isToast) {
+                this.reset(true);
+                this.isToast = isToast;
+                this.frame = Math.floor(Math.random() * 10); // Random animation start
+            }
+
+            reset(randomStart) {
+                // Fly from Top-Right to Bottom-Left
+                if (randomStart) {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                } else {
+                    // Start off-screen (Top or Right)
+                    if (Math.random() > 0.5) {
+                        this.x = width + 50;
+                        this.y = Math.random() * height * 0.5;
+                    } else {
+                        this.x = Math.random() * width + width/2;
+                        this.y = -50;
+                    }
+                }
+                
+                this.speed = 3 + Math.random() * 3;
+                // Diagonal Movement logic
+                this.vx = -this.speed * 1.5; // Move Left fast
+                this.vy = this.speed * 0.8;  // Move Down slow
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.frame++;
+
+                // Reset if off screen (Bottom or Left)
+                if (this.x < -150 || this.y > height + 100) {
+                    this.reset(false);
+                }
+            }
+
+            draw() {
+                if (this.isToast) {
+                    ctx.drawImage(toastImg, this.x, this.y);
+                } else {
+                    // Flap wings every 10 frames
+                    let sprite = (Math.floor(this.frame / 10) % 2 === 0) ? toasterDown : toasterUp;
+                    ctx.drawImage(sprite, this.x, this.y);
+                }
+            }
+        }
+
+        // Initialize Objects
+        for(let i=0; i<COUNT; i++) OBJECTS.push(new Flyer(false)); // Toasters
+        for(let i=0; i<TOAST_COUNT; i++) OBJECTS.push(new Flyer(true)); // Toast
+
+        // --- MAIN LOOP ---
+        function animate() {
+            ctx.fillStyle = '#000'; // Classic Black Background
+            ctx.fillRect(0, 0, width, height);
+
+            OBJECTS.forEach(obj => {
+                obj.update();
+                obj.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>

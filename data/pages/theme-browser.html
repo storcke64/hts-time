@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTS Theme Deck Browser</title>
+    <style>
+        body { 
+            background: rgba(5, 5, 5, 0.98); color: white; margin: 0; 
+            font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .layout { display: flex; flex: 1; overflow: hidden; }
+        
+        /* SIDEBAR */
+        .sidebar { 
+            width: 320px; background: #080808; border-right: 1px solid #222; 
+            padding: 25px; display: flex; flex-direction: column; gap: 15px;
+        }
+        .header-label { color: #ffd700; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
+        
+        /* PREVIEW UNIT */
+        .preview-container {
+            width: 100%; height: 150px; /* Increased height for better visibility */
+            background: #000; border: 1px solid #333;
+            position: relative; overflow: hidden; border-radius: 4px 4px 0 0;
+            display: flex; /* Enable flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: flex-start; /* Align to top */
+        }
+        
+        #preview-frame {
+            width: 1024px; height: 600px; border: none; 
+            transform: scale(0.28); /* Scaled to fit */
+            transform-origin: top center; /* Changed from top left to top center */
+            pointer-events: none; opacity: 0; transition: opacity 0.3s;
+            position: relative; /* Changed from absolute */
+            flex-shrink: 0; /* Prevent iframe from shrinking */
+        }
+        #preview-frame.visible { opacity: 1; }
+
+        .status-block {
+            background: #111; border: 1px solid #333; border-top: none; 
+            border-radius: 0 0 4px 4px; padding: 12px; margin-bottom: 5px;
+        }
+        .status-label { font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .status-value { font-size: 11px; color: #39ff14; font-weight: bold; }
+        .status-path { font-size: 9px; color: #444; font-family: monospace; margin-top: 4px; overflow: hidden; }
+
+        .instr-section { background: rgba(255,255,255,0.03); border-left: 3px solid #333; padding: 10px; }
+        .instr-section.active { border-left-color: #ffd700; }
+        .instr-title { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #888; }
+        .instr-body { font-size: 10px; line-height: 1.3; color: #999; }
+
+        /* THE GRID */
+        .grid { flex: 1; padding: 25px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; overflow-y: auto; align-content: start; }
+        .card { 
+            background: #111; border: 1px solid #333; border-radius: 4px; height: 130px;
+            cursor: pointer; position: relative; transition: 0.1s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .card:hover { border-color: #00d4ff; transform: translateY(-3px); background: #1a1a1a; }
+        .card.active { border: 2px solid #00d4ff; background: rgba(0, 212, 255, 0.05); }
+        .card.system-active { border: 2px solid #39ff14; box-shadow: inset 0 0 10px rgba(57, 255, 20, 0.1); }
+
+        .icon-large { font-size: 38px; margin-bottom: 8px; pointer-events: none; }
+        .icon-img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #444; }
+        .label { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #777; text-align: center; }
+        .external-badge { position: absolute; top: 6px; right: 6px; font-size: 10px; color: #00d4ff; opacity: 0.6; }
+
+        .btn { padding: 12px; border: 1px solid #ffd700; background: transparent; color: #ffd700; cursor: pointer; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .btn:hover { background: rgba(255, 215, 0, 0.1); }
+        .btn-apply { background: #39ff14; color: #000; border: none; opacity: 0.3; pointer-events: none; transition: 0.3s; }
+        .btn-apply.ready { opacity: 1; pointer-events: auto; cursor: pointer; }
+        
+        .section-header { grid-column: 1 / -1; color: #888; font-size: 11px; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; }
+        
+        /* Context menu for faceplate actions */
+        .context-menu {
+            position: fixed;
+            background: #111;
+            border: 1px solid #ffd700;
+            border-radius: 4px;
+            padding: 5px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            z-index: 9999;
+            display: none;
+        }
+        .context-menu.show { display: block; }
+        .context-item {
+            padding: 10px 20px;
+            color: #ccc;
+            font-size: 11px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .context-item:hover {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+        }
+        .context-item.danger:hover {
+            background: rgba(255, 50, 50, 0.1);
+            color: #ff3333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header-label">HTS DECK BROWSER</div>
+            
+            <div class="preview-container">
+                <iframe id="preview-frame"></iframe>
+            </div>
+            <div class="status-block">
+                <div class="status-label">Active System Theme</div>
+                <div class="status-value" id="active-name">--</div>
+                <div class="status-path" id="active-file">--</div>
+            </div>
+
+            <div class="instr-section active">
+                <div class="instr-title">Protocol</div>
+                <div class="instr-body">Selection reverts to <b>Active</b> in 10s if not applied.</div>
+            </div>
+
+            <button id="btn-import-html" class="btn" onclick="triggerImport()">Import HTML Theme</button>
+            <button id="btn-import-face" class="btn" style="border-color:#00d4ff; color:#00d4ff;" onclick="triggerFaceplateImport()">Import Faceplate</button>
+            <button id="apply-btn" class="btn btn-apply" onclick="confirmTheme()">Apply Selected</button>
+            <button class="btn" style="border-color:#444; color:#555; margin-top:auto;" onclick="window.location.href='screensaver.html'">Exit</button>
+            
+            <input type="file" id="fallback-picker" style="display:none;" accept=".html,.htm">
+        </div>
+
+        <div class="grid" id="theme-grid" onclick="resetToActive()"></div>
+    </div>
+
+    <!-- Context menu for faceplate actions -->
+    <div class="context-menu" id="context-menu">
+        <div class="context-item" onclick="renameContextItem()">Rename</div>
+        <div class="context-item danger" onclick="deleteContextItem()">Delete</div>
+    </div>
+
+    <script>
+        const THEME_ROOT = "file:///app/bin/data/control-panel-themes/";
+        
+        const iconLibrary = { 
+            "STAINED": "⛪", "GLASS": "⛪", "UNICORN": "🦄", 
+            "LEOPARD": "🐆", "STARSHIP": "🚀", "INDUSTRIAL": "🏭",
+            "FACEPLATE": "🖼️", "WIDE": "📟", "GREEN": "📟"
+        };
+        
+        // --- UPDATED REGISTRY WITH EXACT FILENAMES ---
+        let standardThemes = [
+            { name: "VHS APPLIANCE", file: "theme_vhs.html", icon: "📼", type: "html" },
+            { name: "WIDE GREEN", file: "theme_wide_green.html", icon: "📟", type: "html" },
+            { name: "DEFAULT (System)", file: "theme_original.html", icon: "⚙️", type: "html" },
+            { name: "FACEPLATE ARMOR", file: "theme_faceplate.html", icon: "🖼️", type: "html" },
+            { name: "INDUSTRIAL", file: "theme_industrial.html", icon: "🏭", type: "html" },
+            { name: "LEOPARD", file: "leopard.html", icon: "🐆", type: "html" },
+            { name: "STARSHIP", file: "starship_theme.html", icon: "🚀", type: "html" },
+            { name: "UNICORN", file: "theme_unicorn.html", icon: "🦄", type: "html" }
+        ];
+
+        let externalThemes = [];
+        let faceplateThemes = [];
+        let pendingTheme = null;
+        let revertTimer = null;
+        let injectionInterval = null;
+        
+        // Long-press context menu state
+        let longPressTimer = null;
+        let longPressTarget = null;
+        const LONG_PRESS_DURATION = 800; // ms
+
+        function triggerImport() {
+            const btn = document.getElementById('btn-import-html');
+            btn.innerText = "SELECT FILE...";
+            btn.style.borderColor = "#fff";
+            
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                window.webkit.messageHandlers.hts_browser_sync.postMessage("import_theme");
+                setTimeout(() => { btn.innerText = "IMPORT HTML THEME"; btn.style.borderColor = "#ffd700"; }, 2000);
+            } else {
+                console.log("Using browser file picker.");
+                document.getElementById('fallback-picker').click();
+                // Button text will be reset after file selection
+            }
+        }
+        
+        document.getElementById('fallback-picker').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const btn = document.getElementById('btn-import-html');
+            
+            if (!file) {
+                btn.innerText = "IMPORT HTML THEME";
+                btn.style.borderColor = "#ffd700";
+                return;
+            }
+            
+            // Validate file type
+            if (!file.name.endsWith('.html') && !file.name.endsWith('.htm')) {
+                btn.innerText = "INVALID FILE TYPE";
+                btn.style.borderColor = "#ff3333";
+                setTimeout(() => {
+                    btn.innerText = "IMPORT HTML THEME";
+                    btn.style.borderColor = "#ffd700";
+                }, 2000);
+                return;
+            }
+            
+            // Create blob URL and add to external themes
+            const fakePath = URL.createObjectURL(file);
+            const themeName = file.name.replace(/\.(html|htm)$/i, '').toUpperCase();
+            const newTheme = { 
+                name: themeName, 
+                file: fakePath, 
+                icon: "📁", 
+                type: "html", 
+                isExternal: true 
+            };
+            
+            externalThemes.push(newTheme);
+            renderGrid();
+            
+            // Auto-preview the newly imported theme
+            previewTheme(newTheme);
+            
+            // Success feedback
+            btn.innerText = "✓ IMPORTED";
+            btn.style.borderColor = "#39ff14";
+            setTimeout(() => {
+                btn.innerText = "IMPORT HTML THEME";
+                btn.style.borderColor = "#ffd700";
+            }, 2000);
+            
+            // Reset file input for potential re-import
+            e.target.value = '';
+        });
+
+        function triggerFaceplateImport() {
+            const btn = document.getElementById('btn-import-face');
+            btn.innerText = "OPENING...";
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                window.webkit.messageHandlers.hts_browser_sync.postMessage("open_plate_selector");
+                setTimeout(() => { btn.innerText = "IMPORT FACEPLATE"; }, 2000);
+            }
+        }
+
+        function previewTheme(theme, isAuto = false) {
+            clearTimeout(revertTimer);
+            clearInterval(injectionInterval);
+            
+            pendingTheme = theme;
+            const frame = document.getElementById('preview-frame');
+            frame.classList.remove('visible');
+
+            if (theme.type === 'image') {
+                const baseTheme = THEME_ROOT + "theme_faceplate.html";
+                frame.src = 'about:blank';
+                setTimeout(() => {
+                    frame.src = baseTheme;
+                    frame.onload = () => {
+                        let attempts = 0;
+                        injectionInterval = setInterval(() => {
+                            if (pendingTheme === theme) {
+                                frame.contentWindow.postMessage({ type: 'SET_FACEPLATE', path: theme.path }, '*');
+                                injectCenterFix(frame);
+                                frame.classList.add('visible');
+                            }
+                            attempts++;
+                            if (attempts > 15) clearInterval(injectionInterval);
+                        }, 200);
+                    };
+                }, 50);
+            } else {
+                const path = theme.isExternal ? theme.file : THEME_ROOT + theme.file;
+                if(frame.getAttribute('src') !== path) {
+                    frame.src = path;
+                    frame.onload = () => {
+                        injectCenterFix(frame);
+                        frame.classList.add('visible');
+                    };
+                } else {
+                    injectCenterFix(frame);
+                    frame.classList.add('visible');
+                }
+            }
+            
+            const currentHTML = localStorage.getItem('hts_theme_preference') || (THEME_ROOT + "theme_original.html");
+            const currentFaceplate = localStorage.getItem('hts_faceplate_path');
+            
+            let isActive = false;
+            if (theme.type === 'image') {
+                isActive = (currentFaceplate === theme.path);
+            } else {
+                const path = theme.isExternal ? theme.file : THEME_ROOT + theme.file;
+                isActive = (currentHTML === path && !currentFaceplate);
+            }
+
+            if (!isActive) {
+                document.getElementById('apply-btn').classList.add('ready');
+                if (isAuto) revertTimer = setTimeout(resetToActive, 10000);
+            } else {
+                document.getElementById('apply-btn').classList.remove('ready');
+            }
+            renderGrid();
+        }
+
+        // --- PREVIEW CENTERING LOGIC ---
+        function injectCenterFix(frame) {
+            try {
+                const style = frame.contentDocument.createElement('style');
+                style.textContent = `
+                    html, body { 
+                        display: flex !important;
+                        align-items: center !important; 
+                        justify-content: center !important; 
+                        height: 100vh !important; 
+                        margin: 0 !important;
+                        overflow: hidden !important;
+                        background: transparent !important;
+                    }
+                `;
+                frame.contentDocument.head.appendChild(style);
+            } catch(e) { console.log("Preview injection restricted:", e); }
+        }
+
+        function resetToActive() {
+            if (event && event.type === 'click' && event.target.id !== 'theme-grid') return;
+            if (!event && pendingTheme) return;
+
+            clearTimeout(revertTimer);
+            clearInterval(injectionInterval);
+            
+            const currentFaceplate = localStorage.getItem('hts_faceplate_path');
+            
+            if (currentFaceplate) {
+                const match = faceplateThemes.find(t => t.path === currentFaceplate);
+                if (match) previewTheme(match, true);
+            } else {
+                const currentPref = localStorage.getItem('hts_theme_preference') || (THEME_ROOT + "theme_original.html");
+                let match = standardThemes.find(t => currentPref.includes(t.file)) || 
+                            externalThemes.find(t => t.file === currentPref);
+                if (!match) match = standardThemes.find(t => t.file === "theme_original.html");
+                if (match) previewTheme(match, true);
+            }
+            updateActiveDisplay();
+        }
+
+        function confirmTheme() {
+            if (pendingTheme) {
+                clearTimeout(revertTimer);
+                clearInterval(injectionInterval);
+                const btn = document.getElementById('apply-btn');
+                btn.innerText = "SAVING...";
+                let pathToSend = "";
+                try {
+                    if (pendingTheme.type === 'image') {
+                        localStorage.setItem('hts_theme_preference', THEME_ROOT + 'theme_faceplate.html');
+                        localStorage.setItem('hts_faceplate_path', pendingTheme.path);
+                        pathToSend = "FACEPLATE|" + pendingTheme.path;
+                    } else {
+                        const path = pendingTheme.isExternal ? pendingTheme.file : THEME_ROOT + pendingTheme.file;
+                        localStorage.setItem('hts_theme_preference', path);
+                        localStorage.removeItem('hts_faceplate_path');
+                        pathToSend = path;
+                    }
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                        window.webkit.messageHandlers.hts_browser_sync.postMessage("save_theme|" + pathToSend);
+                    }
+                } catch (e) {
+                    console.error("Save Error:", e);
+                    btn.innerText = "ERROR";
+                    return;
+                }
+                setTimeout(() => { window.location.href = "screensaver.html"; }, 500);
+            }
+        }
+
+        function updateActiveDisplay() {
+            const currentFaceplate = localStorage.getItem('hts_faceplate_path');
+            if (currentFaceplate) {
+                document.getElementById('active-name').innerText = "FACEPLATE MODE";
+                document.getElementById('active-file').innerText = currentFaceplate.split('/').pop();
+            } else {
+                const currentPref = localStorage.getItem('hts_theme_preference') || (THEME_ROOT + "theme_original.html");
+                const filename = currentPref.split('/').pop();
+                const match = standardThemes.find(t => t.file === filename);
+                document.getElementById('active-name').innerText = match ? match.name : "SYSTEM THEME";
+                document.getElementById('active-file').innerText = filename;
+            }
+        }
+
+        window.receiveFaceplateList = function(list) {
+            try {
+                faceplateThemes = list.map(item => ({ name: item.name.toUpperCase(), path: item.path, type: 'image' }));
+                renderGrid();
+                if (!pendingTheme) resetToActive(); 
+            } catch(e) { console.error("Faceplate Error", e); }
+        };
+
+        function startLongPress(e, theme, card) {
+            longPressTarget = { theme, card, x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY };
+            longPressTimer = setTimeout(() => {
+                showContextMenu(longPressTarget.x, longPressTarget.y);
+                // Visual feedback
+                card.style.borderColor = '#ffd700';
+                card.style.transform = 'scale(0.95)';
+            }, LONG_PRESS_DURATION);
+        }
+        
+        function cancelLongPress() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            if (longPressTarget && longPressTarget.card) {
+                longPressTarget.card.style.borderColor = '';
+                longPressTarget.card.style.transform = '';
+            }
+        }
+        
+        function showContextMenu(x, y) {
+            const menu = document.getElementById('context-menu');
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            menu.classList.add('show');
+            
+            // Close menu on any click outside
+            setTimeout(() => {
+                document.addEventListener('click', hideContextMenu, { once: true });
+            }, 100);
+        }
+        
+        function hideContextMenu() {
+            const menu = document.getElementById('context-menu');
+            menu.classList.remove('show');
+            if (longPressTarget && longPressTarget.card) {
+                longPressTarget.card.style.borderColor = '';
+                longPressTarget.card.style.transform = '';
+            }
+        }
+        
+        function renameContextItem() {
+            if (!longPressTarget) return;
+            const theme = longPressTarget.theme;
+            const oldName = theme.name;
+            const newName = prompt('Rename faceplate:', oldName);
+            
+            if (newName && newName.trim() && newName !== oldName) {
+                // Send rename command to backend
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                    const cmd = `rename_faceplate|${theme.path}|${newName.trim()}`;
+                    window.webkit.messageHandlers.hts_browser_sync.postMessage(cmd);
+                    
+                    // Update local state
+                    theme.name = newName.trim().toUpperCase();
+                    renderGrid();
+                }
+            }
+            hideContextMenu();
+        }
+        
+        function deleteContextItem() {
+            if (!longPressTarget) return;
+            const theme = longPressTarget.theme;
+            
+            if (confirm(`Permanently delete "${theme.name}"?`)) {
+                // Send delete command to backend
+                if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                    const cmd = `delete_faceplate|${theme.path}`;
+                    window.webkit.messageHandlers.hts_browser_sync.postMessage(cmd);
+                    
+                    // Remove from local state
+                    const index = faceplateThemes.findIndex(t => t.path === theme.path);
+                    if (index > -1) {
+                        faceplateThemes.splice(index, 1);
+                        renderGrid();
+                        
+                        // If deleted faceplate was active, reset to default
+                        const currentFaceplate = localStorage.getItem('hts_faceplate_path');
+                        if (currentFaceplate === theme.path) {
+                            localStorage.removeItem('hts_faceplate_path');
+                            resetToActive();
+                        }
+                    }
+                }
+            }
+            hideContextMenu();
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('theme-grid');
+            container.innerHTML = "";
+            const currentFaceplate = localStorage.getItem('hts_faceplate_path');
+            const currentPref = localStorage.getItem('hts_theme_preference') || (THEME_ROOT + "theme_original.html");
+
+            const createCard = (t) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                let isSystemActive = (t.type === 'image') ? (currentFaceplate === t.path) : (currentPref.includes(t.file) && !currentFaceplate);
+                const isPending = pendingTheme && ((t.file && pendingTheme.file === t.file) || (t.path && pendingTheme.path === t.path));
+
+                if (isPending) card.classList.add('active');
+                if (isSystemActive) card.classList.add('system-active');
+                card.onclick = (e) => { e.stopPropagation(); previewTheme(t); };
+                
+                // Long-press support for faceplates only
+                if (t.type === 'image') {
+                    card.onmousedown = (e) => startLongPress(e, t, card);
+                    card.onmouseup = () => cancelLongPress();
+                    card.onmouseleave = () => cancelLongPress();
+                    card.ontouchstart = (e) => startLongPress(e, t, card);
+                    card.ontouchend = () => cancelLongPress();
+                    card.ontouchcancel = () => cancelLongPress();
+                }
+                
+                let iconHtml = t.type === 'image' ? `<img src="${t.path}" class="icon-img">` : `<div class="icon-large">${t.icon}</div>`;
+                card.innerHTML = `${iconHtml}<div class="label">${t.name}</div>`;
+                container.appendChild(card);
+            };
+
+            const h1 = document.createElement('div'); h1.className='section-header'; h1.innerText="STANDARD DECKS";
+            container.appendChild(h1);
+            [...standardThemes, ...externalThemes].forEach(createCard);
+
+            if (faceplateThemes.length > 0) {
+                const h2 = document.createElement('div'); h2.className='section-header'; h2.innerText="CUSTOM FACEPLATES";
+                container.appendChild(h2);
+                faceplateThemes.forEach(createCard);
+            }
+        }
+
+        /* Called by C chooser after user picks an .html theme file */
+        window.receiveImportedTheme = function(name, fileUri) {
+            const newTheme = {
+                name: name.toUpperCase(),
+                file: fileUri,
+                icon: "📁",
+                type: "html",
+                isExternal: true
+            };
+            externalThemes.push(newTheme);
+            renderGrid();
+            previewTheme(newTheme);
+        };
+
+        /* Called by C chooser after user picks a faceplate image */
+        window.receiveSelectedFaceplate = function(fileUri) {
+            const name = fileUri.split('/').pop().replace(/\.[^.]+$/, '').toUpperCase();
+            const newFaceplate = { name: name, path: fileUri, type: 'image' };
+            faceplateThemes.push(newFaceplate);
+            renderGrid();
+            previewTheme(newFaceplate);
+        };
+
+        window.onload = () => {
+            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+                window.webkit.messageHandlers.hts_browser_sync.postMessage("ready");
+            }
+            resetToActive();
+        };
+    </script>
+</body>
+</html>

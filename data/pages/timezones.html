@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - Global Ledger</title>
+    <style>
+        :root { 
+            --neon-blue: #00d4ff; --neon-green: #39ff14; --bg-obsidian: #0a0a0a; 
+            --neon-glow: rgba(0, 212, 255, 0.4);
+        }
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
+        body { background-color: var(--bg-obsidian); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; cursor: none; }
+        body:hover, body:hover * { cursor: auto; }
+        
+        #projector-canvas { width: 100%; display: flex; flex-direction: column; align-items: center; transition: margin-bottom 0.2s; }
+        
+        /* HEADER UPDATED FOR LOGO */
+        .header { 
+            width: 100%; padding: 30px 0 30px 0; min-height: 170px; background: #0d0d0d; border-bottom: 2px solid #333; 
+            text-align: center; position: relative;
+        }
+        .header h1 { color: var(--neon-blue); margin: 0; font-size: 24px; letter-spacing: 4px; text-transform: uppercase; }
+        
+
+
+        .gmt-master { color: var(--neon-green); font-family: monospace; font-size: 20px; border: 1px solid var(--neon-green); padding: 5px 20px; display: inline-block; margin-top: 10px; }
+        .abc-strip { display: flex; justify-content: center; flex-wrap: wrap; background: #000; padding: 15px; gap: 12px; width: 100%; position: sticky; top: 54px; z-index: 90; }
+        .abc-key { color: var(--neon-blue); font-weight: bold; cursor: pointer; padding: 2px 5px; }
+        .abc-key.active { color: var(--neon-green); border-bottom: 2px solid var(--neon-green); }
+        .ledger-container { width: 90%; max-width: 1200px; padding: 40px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .country-card { background: #111; border-left: 5px solid var(--neon-blue); padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .country-card:hover { background: #1a1a1a; border-left-width: 10px; }
+        .country-card.hidden { display: none; }
+        .time-group { text-align: right; pointer-events: none; }
+        .local-time-12 { color: var(--neon-green); font-family: monospace; font-size: 20px; font-weight: bold; }
+        .local-time-24 { color: #555; font-family: monospace; font-size: 13px; }
+        #tz-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: #0d0d0d; border: 1px solid var(--neon-blue); padding: 40px; width: 80%; max-width: 800px; border-radius: 10px; position: relative; max-height: 80vh; overflow-y: auto; }
+        .close-modal { position: absolute; top: 20px; right: 20px; color: #444; cursor: pointer; font-size: 24px; }
+        .tz-row { border-bottom: 1px solid #222; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link">CLOCK</a>
+        <a href="converters.html" class="tab-link">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link active">TIMEZONES</a>
+        <a href="status.html" class="tab-link">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link">FEATURES</a>
+        <a href="about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div id="projector-canvas">
+        <div class="header">
+
+            
+            <h1>Global Capital Ledger</h1>
+            <div id="gmt-readout" class="gmt-master">GMT --:--:--</div>
+        </div>
+        <div id="abc-strip" class="abc-strip"></div>
+        <div id="ledger-grid" class="ledger-container"></div>
+    </div>
+
+    <div id="tz-modal" onclick="closeTZ()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeTZ()">&times;</span>
+            <h2 id="modal-country-name" style="color: var(--neon-blue); letter-spacing: 4px; margin-top: 0;"></h2>
+            <div id="modal-tz-list"></div>
+        </div>
+    </div>
+
+    <script>
+const countryDB = [
+    { f:"🇦🇫", n:"Afghanistan", o:4.5, zones: [{ name: "Kabul Time", o: 4.5, cities: "Kabul" }] },
+    { f:"🇦🇱", n:"Albania", o:1, zones: [{ name: "CET", o: 1, cities: "Tirana" }] },
+    { f:"🇩🇿", n:"Algeria", o:1, zones: [{ name: "CET", o: 1, cities: "Algiers" }] },
+    { f:"🇦🇩", n:"Andorra", o:1, zones: [{ name: "CET", o: 1, cities: "Andorra la Vella" }] },
+    { f:"🇦🇴", n:"Angola", o:1, zones: [{ name: "WAT", o: 1, cities: "Luanda" }] },
+    { f:"🇦🇬", n:"Antigua", o:-4, zones: [{ name: "AST", o: -4, cities: "St. John's" }] },
+    { f:"🇦🇷", n:"Argentina", o:-3, zones: [{ name: "ART", o: -3, cities: "Buenos Aires" }] },
+    { f:"🇦🇲", n:"Armenia", o:4, zones: [{ name: "AMT", o: 4, cities: "Yerevan" }] },
+    { f:"🇦🇺", n:"Australia", o:10, zones: [{ name: "AEST", o: 10, cities: "Sydney" }, { name: "ACST", o: 9.5, cities: "Adelaide" }, { name: "AWST", o: 8, cities: "Perth" }] },
+    { f:"🇦🇹", n:"Austria", o:1, zones: [{ name: "CET", o: 1, cities: "Vienna" }] },
+    { f:"🇦🇿", n:"Azerbaijan", o:4, zones: [{ name: "AZT", o: 4, cities: "Baku" }] },
+    { f:"🇧🇸", n:"Bahamas", o:-5, zones: [{ name: "EST", o: -5, cities: "Nassau" }] },
+    { f:"🇧🇭", n:"Bahrain", o:3, zones: [{ name: "AST", o: 3, cities: "Manama" }] },
+    { f:"🇧🇩", n:"Bangladesh", o:6, zones: [{ name: "BST", o: 6, cities: "Dhaka" }] },
+    { f:"🇧🇧", n:"Barbados", o:-4, zones: [{ name: "AST", o: -4, cities: "Bridgetown" }] },
+    { f:"🇧🇾", n:"Belarus", o:3, zones: [{ name: "MSK", o: 3, cities: "Minsk" }] },
+    { f:"🇧🇪", n:"Belgium", o:1, zones: [{ name: "CET", o: 1, cities: "Brussels" }] },
+    { f:"🇧🇿", n:"Belize", o:-6, zones: [{ name: "CST", o: -6, cities: "Belmopan" }] },
+    { f:"🇧🇯", n:"Benin", o:1, zones: [{ name: "WAT", o: 1, cities: "Porto-Novo" }] },
+    { f:"🇧🇹", n:"Bhutan", o:6, zones: [{ name: "BTT", o: 6, cities: "Thimphu" }] },
+    { f:"🇧🇴", n:"Bolivia", o:-4, zones: [{ name: "BOT", o: -4, cities: "Sucre" }] },
+    { f:"🇧🇦", n:"Bosnia", o:1, zones: [{ name: "CET", o: 1, cities: "Sarajevo" }] },
+    { f:"🇧🇼", n:"Botswana", o:2, zones: [{ name: "CAT", o: 2, cities: "Gaborone" }] },
+    { f:"🇧🇷", n:"Brazil", o:-3, zones: [{ name: "Brasília", o: -3, cities: "São Paulo" }, { name: "Amazon", o: -4, cities: "Manaus" }] },
+    { f:"🇧🇳", n:"Brunei", o:8, zones: [{ name: "BNT", o: 8, cities: "Bandar Seri Begawan" }] },
+    { f:"🇧🇬", n:"Bulgaria", o:2, zones: [{ name: "EET", o: 2, cities: "Sofia" }] },
+    { f:"🇧🇫", n:"Burkina Faso", o:0, zones: [{ name: "GMT", o: 0, cities: "Ouagadougou" }] },
+    { f:"🇧🇮", n:"Burundi", o:2, zones: [{ name: "CAT", o: 2, cities: "Gitega" }] },
+    { f:"🇨🇻", n:"Cabo Verde", o:-1, zones: [{ name: "CVT", o: -1, cities: "Praia" }] },
+    { f:"🇰🇭", n:"Cambodia", o:7, zones: [{ name: "ICT", o: 7, cities: "Phnom Penh" }] },
+    { f:"🇨🇲", n:"Cameroon", o:1, zones: [{ name: "WAT", o: 1, cities: "Yaoundé" }] },
+    { f:"🇨🇦", n:"Canada", o:-5, zones: [{ name: "Eastern", o: -5, cities: "Toronto" }, { name: "Pacific", o: -8, cities: "Vancouver" }, { name: "Mountain", o: -7, cities: "Calgary" }] },
+    { f:"🇨🇫", n:"Central African Rep", o:1, zones: [{ name: "WAT", o: 1, cities: "Bangui" }] },
+    { f:"🇹🇩", n:"Chad", o:1, zones: [{ name: "WAT", o: 1, cities: "N'Djamena" }] },
+    { f:"🇨🇱", n:"Chile", o:-3, zones: [{ name: "CLT", o: -3, cities: "Santiago" }] },
+    { f:"🇨🇳", n:"China", o:8, zones: [{ name: "CST", o: 8, cities: "Beijing" }] },
+    { f:"🇨🇴", n:"Colombia", o:-5, zones: [{ name: "COT", o: -5, cities: "Bogotá" }] },
+    { f:"🇰🇲", n:"Comoros", o:3, zones: [{ name: "EAT", o: 3, cities: "Moroni" }] },
+    { f:"🇨🇬", n:"Congo", o:1, zones: [{ name: "WAT", o: 1, cities: "Brazzaville" }] },
+    { f:"🇨🇷", n:"Costa Rica", o:-6, zones: [{ name: "CST", o: -6, cities: "San José" }] },
+    { f:"🇭🇷", n:"Croatia", o:1, zones: [{ name: "CET", o: 1, cities: "Zagreb" }] },
+    { f:"🇨🇺", n:"Cuba", o:-5, zones: [{ name: "CST", o: -5, cities: "Havana" }] },
+    { f:"🇨🇾", n:"Cyprus", o:2, zones: [{ name: "EET", o: 2, cities: "Nicosia" }] },
+    { f:"🇨🇿", n:"Czech Republic", o:1, zones: [{ name: "CET", o: 1, cities: "Prague" }] },
+    { f:"🇩🇰", n:"Denmark", o:1, zones: [{ name: "CET", o: 1, cities: "Copenhagen" }] },
+    { f:"🇩🇯", n:"Djibouti", o:3, zones: [{ name: "EAT", o: 3, cities: "Djibouti City" }] },
+    { f:"🇩🇲", n:"Dominica", o:-4, zones: [{ name: "AST", o: -4, cities: "Roseau" }] },
+    { f:"🇩🇴", n:"Dominican Republic", o:-4, zones: [{ name: "AST", o: -4, cities: "Santo Domingo" }] },
+    { f:"🇪🇨", n:"Ecuador", o:-5, zones: [{ name: "ECT", o: -5, cities: "Quito" }] },
+    { f:"🇪🇬", n:"Egypt", o:2, zones: [{ name: "EET", o: 2, cities: "Cairo" }] },
+    { f:"🇸🇻", n:"El Salvador", o:-6, zones: [{ name: "CST", o: -6, cities: "San Salvador" }] },
+    { f:"🇬🇶", n:"Equatorial Guinea", o:1, zones: [{ name: "WAT", o: 1, cities: "Malabo" }] },
+    { f:"🇪🇷", n:"Eritrea", o:3, zones: [{ name: "EAT", o: 3, cities: "Asmara" }] },
+    { f:"🇪🇪", n:"Estonia", o:2, zones: [{ name: "EET", o: 2, cities: "Tallinn" }] },
+    { f:"🇸🇿", n:"Eswatini", o:2, zones: [{ name: "SAST", o: 2, cities: "Mbabane" }] },
+    { f:"🇪🇹", n:"Ethiopia", o:3, zones: [{ name: "EAT", o: 3, cities: "Addis Ababa" }] },
+    { f:"🇫🇯", n:"Fiji", o:12, zones: [{ name: "FJT", o: 12, cities: "Suva" }] },
+    { f:"🇫🇮", n:"Finland", o:2, zones: [{ name: "EET", o: 2, cities: "Helsinki" }] },
+    { f:"🇫🇷", n:"France", o:1, zones: [{ name: "CET", o: 1, cities: "Paris" }] },
+    { f:"🇬🇦", n:"Gabon", o:1, zones: [{ name: "WAT", o: 1, cities: "Libreville" }] },
+    { f:"🇬🇲", n:"Gambia", o:0, zones: [{ name: "GMT", o: 0, cities: "Banjul" }] },
+    { f:"🇬🇪", n:"Georgia", o:4, zones: [{ name: "GET", o: 4, cities: "Tbilisi" }] },
+    { f:"🇩🇪", n:"Germany", o:1, zones: [{ name: "CET", o: 1, cities: "Berlin" }] },
+    { f:"🇬🇭", n:"Ghana", o:0, zones: [{ name: "GMT", o: 0, cities: "Accra" }] },
+    { f:"🇬🇷", n:"Greece", o:2, zones: [{ name: "EET", o: 2, cities: "Athens" }] },
+    { f:"🇬🇩", n:"Grenada", o:-4, zones: [{ name: "AST", o: -4, cities: "St. George's" }] },
+    { f:"🇬🇹", n:"Guatemala", o:-6, zones: [{ name: "CST", o: -6, cities: "Guatemala City" }] },
+    { f:"🇬🇳", n:"Guinea", o:0, zones: [{ name: "GMT", o: 0, cities: "Conakry" }] },
+    { f:"🇬🇼", n:"Guinea-Bissau", o:0, zones: [{ name: "GMT", o: 0, cities: "Bissau" }] },
+    { f:"🇬🇾", n:"Guyana", o:-4, zones: [{ name: "GYT", o: -4, cities: "Georgetown" }] },
+    { f:"🇭🇹", n:"Haiti", o:-5, zones: [{ name: "EST", o: -5, cities: "Port-au-Prince" }] },
+    { f:"🇭🇳", n:"Honduras", o:-6, zones: [{ name: "CST", o: -6, cities: "Tegucigalpa" }] },
+    { f:"🇭🇺", n:"Hungary", o:1, zones: [{ name: "CET", o: 1, cities: "Budapest" }] },
+    { f:"🇮🇸", n:"Iceland", o:0, zones: [{ name: "GMT", o: 0, cities: "Reykjavík" }] },
+    { f:"🇮🇳", n:"India", o:5.5, zones: [{ name: "IST", o: 5.5, cities: "New Delhi" }] },
+    { f:"🇮🇩", n:"Indonesia", o:7, zones: [{ name: "WIB", o: 7, cities: "Jakarta" }] },
+    { f:"🇮🇷", n:"Iran", o:3.5, zones: [{ name: "IRST", o: 3.5, cities: "Tehran" }] },
+    { f:"🇮🇶", n:"Iraq", o:3, zones: [{ name: "AST", o: 3, cities: "Baghdad" }] },
+    { f:"🇮🇪", n:"Ireland", o:0, zones: [{ name: "GMT", o: 0, cities: "Dublin" }] },
+    { f:"🇮🇱", n:"Israel", o:2, zones: [{ name: "IST", o: 2, cities: "Jerusalem" }] },
+    { f:"🇮🇹", n:"Italy", o:1, zones: [{ name: "CET", o: 1, cities: "Rome" }] },
+    { f:"🇨🇮", n:"Ivory Coast", o:0, zones: [{ name: "GMT", o: 0, cities: "Yamoussoukro" }] },
+    { f:"🇯🇲", n:"Jamaica", o:-5, zones: [{ name: "EST", o: -5, cities: "Kingston" }] },
+    { f:"🇯🇵", n:"Japan", o:9, zones: [{ name: "JST", o: 9, cities: "Tokyo" }] },
+    { f:"🇯🇴", n:"Jordan", o:3, zones: [{ name: "AST", o: 3, cities: "Amman" }] },
+    { f:"🇰🇿", n:"Kazakhstan", o:5, zones: [{ name: "KZT", o: 5, cities: "Astana" }] },
+    { f:"🇰🇪", n:"Kenya", o:3, zones: [{ name: "EAT", o: 3, cities: "Nairobi" }] },
+    { f:"🇰🇮", n:"Kiribati", o:12, zones: [{ name: "GILT", o: 12, cities: "Tarawa" }] },
+    { f:"🇰🇼", n:"Kuwait", o:3, zones: [{ name: "AST", o: 3, cities: "Kuwait City" }] },
+    { f:"🇰🇬", n:"Kyrgyzstan", o:6, zones: [{ name: "KGT", o: 6, cities: "Bishkek" }] },
+    { f:"🇱🇦", n:"Laos", o:7, zones: [{ name: "ICT", o: 7, cities: "Vientiane" }] },
+    { f:"🇱🇻", n:"Latvia", o:2, zones: [{ name: "EET", o: 2, cities: "Riga" }] },
+    { f:"🇱🇧", n:"Lebanon", o:2, zones: [{ name: "EET", o: 2, cities: "Beirut" }] },
+    { f:"🇱🇸", n:"Lesotho", o:2, zones: [{ name: "SAST", o: 2, cities: "Maseru" }] },
+    { f:"🇱🇷", n:"Liberia", o:0, zones: [{ name: "GMT", o: 0, cities: "Monrovia" }] },
+    { f:"🇱🇾", n:"Libya", o:2, zones: [{ name: "EET", o: 2, cities: "Tripoli" }] },
+    { f:"🇱🇮", n:"Liechtenstein", o:1, zones: [{ name: "CET", o: 1, cities: "Vaduz" }] },
+    { f:"🇱🇹", n:"Lithuania", o:2, zones: [{ name: "EET", o: 2, cities: "Vilnius" }] },
+    { f:"🇱🇺", n:"Luxembourg", o:1, zones: [{ name: "CET", o: 1, cities: "Luxembourg" }] },
+    { f:"🇲🇬", n:"Madagascar", o:3, zones: [{ name: "EAT", o: 3, cities: "Antananarivo" }] },
+    { f:"🇲🇼", n:"Malawi", o:2, zones: [{ name: "CAT", o: 2, cities: "Lilongwe" }] },
+    { f:"🇲🇾", n:"Malaysia", o:8, zones: [{ name: "MYT", o: 8, cities: "Kuala Lumpur" }] },
+    { f:"🇲🇻", n:"Maldives", o:5, zones: [{ name: "MVT", o: 5, cities: "Malé" }] },
+    { f:"🇲🇱", n:"Mali", o:0, zones: [{ name: "GMT", o: 0, cities: "Bamako" }] },
+    { f:"🇲🇹", n:"Malta", o:1, zones: [{ name: "CET", o: 1, cities: "Valletta" }] },
+    { f:"🇲🇭", n:"Marshall Islands", o:12, zones: [{ name: "MHT", o: 12, cities: "Majuro" }] },
+    { f:"🇲🇷", n:"Mauritania", o:0, zones: [{ name: "GMT", o: 0, cities: "Nouakchott" }] },
+    { f:"🇲🇺", n:"Mauritius", o:4, zones: [{ name: "MUT", o: 4, cities: "Port Louis" }] },
+    { f:"🇲🇽", n:"Mexico", o:-6, zones: [{ name: "Central", o: -6, cities: "Mexico City" }, { name: "Pacific", o: -7, cities: "Mazatlán" }] },
+    { f:"🇫🇲", n:"Micronesia", o:11, zones: [{ name: "PONT", o: 11, cities: "Palikir" }] },
+    { f:"🇲🇩", n:"Moldova", o:2, zones: [{ name: "EET", o: 2, cities: "Chișinău" }] },
+    { f:"🇲🇨", n:"Monaco", o:1, zones: [{ name: "CET", o: 1, cities: "Monaco" }] },
+    { f:"🇲🇳", n:"Mongolia", o:8, zones: [{ name: "ULAT", o: 8, cities: "Ulaanbaatar" }] },
+    { f:"🇲🇪", n:"Montenegro", o:1, zones: [{ name: "CET", o: 1, cities: "Podgorica" }] },
+    { f:"🇲🇦", n:"Morocco", o:1, zones: [{ name: "CET", o: 1, cities: "Rabat" }] },
+    { f:"🇲🇿", n:"Mozambique", o:2, zones: [{ name: "CAT", o: 2, cities: "Maputo" }] },
+    { f:"🇲🇲", n:"Myanmar", o:6.5, zones: [{ name: "MMT", o: 6.5, cities: "Naypyidaw" }] },
+    { f:"🇳🇦", n:"Namibia", o:2, zones: [{ name: "CAT", o: 2, cities: "Windhoek" }] },
+    { f:"🇳🇷", n:"Nauru", o:12, zones: [{ name: "NRT", o: 12, cities: "Yaren" }] },
+    { f:"🇳🇵", n:"Nepal", o:5.75, zones: [{ name: "NPT", o: 5.75, cities: "Kathmandu" }] },
+    { f:"🇳🇱", n:"Netherlands", o:1, zones: [{ name: "CET", o: 1, cities: "Amsterdam" }] },
+    { f:"🇳🇿", n:"New Zealand", o:12, zones: [{ name: "NZST", o: 12, cities: "Wellington" }] },
+    { f:"🇳🇮", n:"Nicaragua", o:-6, zones: [{ name: "CST", o: -6, cities: "Managua" }] },
+    { f:"🇳🇪", n:"Niger", o:1, zones: [{ name: "WAT", o: 1, cities: "Niamey" }] },
+    { f:"🇳🇬", n:"Nigeria", o:1, zones: [{ name: "WAT", o: 1, cities: "Abuja" }] },
+    { f:"🇰🇵", n:"North Korea", o:9, zones: [{ name: "KST", o: 9, cities: "Pyongyang" }] },
+    { f:"🇲🇰", n:"North Macedonia", o:1, zones: [{ name: "CET", o: 1, cities: "Skopje" }] },
+    { f:"🇳🇴", n:"Norway", o:1, zones: [{ name: "CET", o: 1, cities: "Oslo" }] },
+    { f:"🇴🇲", n:"Oman", o:4, zones: [{ name: "GST", o: 4, cities: "Muscat" }] },
+    { f:"🇵🇰", n:"Pakistan", o:5, zones: [{ name: "PKT", o: 5, cities: "Islamabad" }] },
+    { f:"🇵🇼", n:"Palau", o:9, zones: [{ name: "PWT", o: 9, cities: "Ngerulmud" }] },
+    { f:"🇵🇦", n:"Panama", o:-5, zones: [{ name: "EST", o: -5, cities: "Panama City" }] },
+    { f:"🇵🇬", n:"Papua New Guinea", o:10, zones: [{ name: "PGT", o: 10, cities: "Port Moresby" }] },
+    { f:"🇵🇾", n:"Paraguay", o:-4, zones: [{ name: "PYT", o: -4, cities: "Asunción" }] },
+    { f:"🇵🇪", n:"Peru", o:-5, zones: [{ name: "PET", o: -5, cities: "Lima" }] },
+    { f:"🇵🇭", n:"Philippines", o:8, zones: [{ name: "PHT", o: 8, cities: "Manila" }] },
+    { f:"🇵🇱", n:"Poland", o:1, zones: [{ name: "CET", o: 1, cities: "Warsaw" }] },
+    { f:"🇵🇹", n:"Portugal", o:0, zones: [{ name: "WET", o: 0, cities: "Lisbon" }] },
+    { f:"🇶🇦", n:"Qatar", o:3, zones: [{ name: "AST", o: 3, cities: "Doha" }] },
+    { f:"🇷🇴", n:"Romania", o:2, zones: [{ name: "EET", o: 2, cities: "Bucharest" }] },
+    { f:"🇷🇺", n:"Russia", o:3, zones: [{ name: "Moscow", o: 3, cities: "Moscow" }, { name: "Vladivostok", o: 10, cities: "Vladivostok" }] },
+    { f:"🇷🇼", n:"Rwanda", o:2, zones: [{ name: "CAT", o: 2, cities: "Kigali" }] },
+    { f:"🇰🇳", n:"Saint Kitts", o:-4, zones: [{ name: "AST", o: -4, cities: "Basseterre" }] },
+    { f:"🇱🇨", n:"Saint Lucia", o:-4, zones: [{ name: "AST", o: -4, cities: "Castries" }] },
+    { f:"🇻🇨", n:"Saint Vincent", o:-4, zones: [{ name: "AST", o: -4, cities: "Kingstown" }] },
+    { f:"🇼🇸", n:"Samoa", o:13, zones: [{ name: "WST", o: 13, cities: "Apia" }] },
+    { f:"🇸🇲", n:"San Marino", o:1, zones: [{ name: "CET", o: 1, cities: "San Marino" }] },
+    { f:"🇸🇹", n:"Sao Tome", o:0, zones: [{ name: "GMT", o: 0, cities: "São Tomé" }] },
+    { f:"🇸🇦", n:"Saudi Arabia", o:3, zones: [{ name: "AST", o: 3, cities: "Riyadh" }] },
+    { f:"🇸🇳", n:"Senegal", o:0, zones: [{ name: "GMT", o: 0, cities: "Dakar" }] },
+    { f:"🇷🇸", n:"Serbia", o:1, zones: [{ name: "CET", o: 1, cities: "Belgrade" }] },
+    { f:"🇸🇨", n:"Seychelles", o:4, zones: [{ name: "SCT", o: 4, cities: "Victoria" }] },
+    { f:"🇸🇱", n:"Sierra Leone", o:0, zones: [{ name: "GMT", o: 0, cities: "Freetown" }] },
+    { f:"🇸🇬", n:"Singapore", o:8, zones: [{ name: "SGT", o: 8, cities: "Singapore" }] },
+    { f:"🇸🇰", n:"Slovakia", o:1, zones: [{ name: "CET", o: 1, cities: "Bratislava" }] },
+    { f:"🇸🇮", n:"Slovenia", o:1, zones: [{ name: "CET", o: 1, cities: "Ljubljana" }] },
+    { f:"🇸🇧", n:"Solomon Islands", o:11, zones: [{ name: "SBT", o: 11, cities: "Honiara" }] },
+    { f:"🇸🇴", n:"Somalia", o:3, zones: [{ name: "EAT", o: 3, cities: "Mogadishu" }] },
+    { f:"🇿🇦", n:"South Africa", o:2, zones: [{ name: "SAST", o: 2, cities: "Pretoria" }] },
+    { f:"🇰🇷", n:"South Korea", o:9, zones: [{ name: "KST", o: 9, cities: "Seoul" }] },
+    { f:"🇸🇸", n:"South Sudan", o:2, zones: [{ name: "CAT", o: 2, cities: "Juba" }] },
+    { f:"🇪🇸", n:"Spain", o:1, zones: [{ name: "CET", o: 1, cities: "Madrid" }] },
+    { f:"🇱🇰", n:"Sri Lanka", o:5.5, zones: [{ name: "IST", o: 5.5, cities: "Colombo" }] },
+    { f:"🇸🇩", n:"Sudan", o:2, zones: [{ name: "CAT", o: 2, cities: "Khartoum" }] },
+    { f:"🇸🇷", n:"Suriname", o:-3, zones: [{ name: "SRT", o: -3, cities: "Paramaribo" }] },
+    { f:"🇸🇪", n:"Sweden", o:1, zones: [{ name: "CET", o: 1, cities: "Stockholm" }] },
+    { f:"🇨🇭", n:"Switzerland", o:1, zones: [{ name: "CET", o: 1, cities: "Bern" }] },
+    { f:"🇸🇾", n:"Syria", o:3, zones: [{ name: "EET", o: 3, cities: "Damascus" }] },
+    { f:"🇹🇼", n:"Taiwan", o:8, zones: [{ name: "CST", o: 8, cities: "Taipei" }] },
+    { f:"🇹🇯", n:"Tajikistan", o:5, zones: [{ name: "TJT", o: 5, cities: "Dushanbe" }] },
+    { f:"🇹🇿", n:"Tanzania", o:3, zones: [{ name: "EAT", o: 3, cities: "Dodoma" }] },
+    { f:"🇹🇭", n:"Thailand", o:7, zones: [{ name: "ICT", o: 7, cities: "Bangkok" }] },
+    { f:"🇹🇱", n:"Timor-Leste", o:9, zones: [{ name: "TLT", o: 9, cities: "Dili" }] },
+    { f:"🇹🇬", n:"Togo", o:0, zones: [{ name: "GMT", o: 0, cities: "Lomé" }] },
+    { f:"🇹🇴", n:"Tonga", o:13, zones: [{ name: "TOT", o: 13, cities: "Nuku'alofa" }] },
+    { f:"🇹🇹", n:"Trinidad", o:-4, zones: [{ name: "AST", o: -4, cities: "Port of Spain" }] },
+    { f:"🇹🇳", n:"Tunisia", o:1, zones: [{ name: "CET", o: 1, cities: "Tunis" }] },
+    { f:"🇹🇷", n:"Turkey", o:3, zones: [{ name: "TRT", o: 3, cities: "Ankara" }] },
+    { f:"🇹🇲", n:"Turkmenistan", o:5, zones: [{ name: "TMT", o: 5, cities: "Ashgabat" }] },
+    { f:"🇹🇻", n:"Tuvalu", o:12, zones: [{ name: "TVT", o: 12, cities: "Funafuti" }] },
+    { f:"🇺🇬", n:"Uganda", o:3, zones: [{ name: "EAT", o: 3, cities: "Kampala" }] },
+    { f:"🇺🇦", n:"Ukraine", o:2, zones: [{ name: "EET", o: 2, cities: "Kyiv" }] },
+    { f:"🇦🇪", n:"UAE", o:4, zones: [{ name: "GST", o: 4, cities: "Abu Dhabi" }] },
+    { f:"🇬🇧", n:"UK", o:0, zones: [{ name: "GMT", o: 0, cities: "London" }] },
+    { f:"🇺🇸", n:"USA", o:-5, zones: [
+        { name: "Eastern", o: -5, cities: "DC, NY" }, 
+        { name: "Central", o: -6, cities: "Chicago" }, 
+        { name: "Mountain", o: -7, cities: "Denver" },
+        { name: "Pacific", o: -8, cities: "LA" }, 
+        { name: "Alaska", o: -9, cities: "Anchorage" }, 
+        { name: "Hawaii", o: -10, cities: "Honolulu" }
+    ]},
+    { f:"🇺🇾", n:"Uruguay", o:-3, zones: [{ name: "UYT", o: -3, cities: "Montevideo" }] },
+    { f:"🇺🇿", n:"Uzbekistan", o:5, zones: [{ name: "UZT", o: 5, cities: "Tashkent" }] },
+    { f:"🇻🇺", n:"Vanuatu", o:11, zones: [{ name: "VUT", o: 11, cities: "Port Vila" }] },
+    { f:"🇻🇦", n:"Vatican", o:1, zones: [{ name: "CET", o: 1, cities: "Vatican City" }] },
+    { f:"🇻🇪", n:"Venezuela", o:-4, zones: [{ name: "VET", o: -4, cities: "Caracas" }] },
+    { f:"🇻🇳", n:"Vietnam", o:7, zones: [{ name: "ICT", o: 7, cities: "Hanoi" }] },
+    { f:"🇾🇪", n:"Yemen", o:3, zones: [{ name: "AST", o: 3, cities: "Sanaa" }] },
+    { f:"🇿🇲", n:"Zambia", o:2, zones: [{ name: "CAT", o: 2, cities: "Lusaka" }] },
+    { f:"🇿🇼", n:"Zimbabwe", o:2, zones: [{ name: "CAT", o: 2, cities: "Harare" }] }
+];
+
+        function init() {
+            const pos = localStorage.getItem('hts_curtain_pos') || 0;
+            document.getElementById('projector-canvas').style.marginBottom = pos + 'px';
+            const grid = document.getElementById('ledger-grid');
+            const abc = document.getElementById('abc-strip');
+            
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l => {
+                const btn = document.createElement('span');
+                btn.innerText = l; btn.className = "abc-key";
+                btn.onclick = (e) => {
+                    document.querySelectorAll('.abc-key').forEach(k => k.classList.remove('active'));
+                    e.target.classList.add('active');
+                    document.querySelectorAll('.country-card').forEach(c => {
+                        c.classList.toggle('hidden', l !== 'ALL' && c.dataset.letter !== l);
+                    });
+                };
+                abc.appendChild(btn);
+            });
+
+            countryDB.sort((a,b) => a.n.localeCompare(b.n)).forEach((c, index) => {
+                const card = document.createElement('div');
+                card.className = 'country-card';
+                card.dataset.letter = c.n.charAt(0).toUpperCase();
+                card.onclick = () => openTZ(index);
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center;">
+                        <span style="font-size:24px;">${c.f}</span> 
+                        <span style="margin-left:10px; font-weight:bold;">${c.n}</span>
+                    </div>
+                    <div class="time-group">
+                        <div class="local-time-12" data-offset="${c.o}">--:--</div>
+                        <div class="local-time-24" data-offset="${c.o}">--:--</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            setInterval(tick, 1000);
+            tick();
+        }
+
+        function openTZ(index) {
+            const country = countryDB[index];
+            const modal = document.getElementById('tz-modal');
+            const list = document.getElementById('modal-tz-list');
+            document.getElementById('modal-country-name').innerText = `${country.f} ${country.n.toUpperCase()}`;
+            list.innerHTML = country.zones.map(z => `
+                <div class="tz-row">
+                    <div>
+                        <div style="color: white; font-weight:bold;">${z.name} (GMT ${z.o >=0 ? '+'+z.o : z.o})</div>
+                        <div class="city-list">${z.cities}</div>
+                    </div>
+                    <div style="color: var(--neon-green); font-family:monospace; font-weight:bold;">${calculateTime(z.o)}</div>
+                </div>
+            `).join('');
+            modal.style.display = 'flex';
+        }
+
+        function closeTZ() { document.getElementById('tz-modal').style.display = 'none'; }
+
+        function calculateTime(offset) {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const local = new Date(utc + (3600000 * offset));
+            let hh = local.getHours();
+            const mm = local.getMinutes().toString().padStart(2, '0');
+            const suffix = hh >= 12 ? "PM" : "AM";
+            hh = hh % 12 || 12;
+            return `${hh}:${mm} ${suffix}`;
+        }
+
+        function tick() {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            document.getElementById('gmt-readout').innerText = "GMT " + new Date(utc).toLocaleTimeString('en-GB', { hour12: false });
+            document.querySelectorAll('.local-time-12').forEach(el => {
+                const offset = parseFloat(el.dataset.offset);
+                const local = new Date(utc + (3600000 * offset));
+                let hh = local.getHours();
+                const mm = local.getMinutes().toString().padStart(2, '0');
+                const suffix = hh >= 12 ? "PM" : "AM";
+                hh = hh % 12 || 12;
+                el.innerHTML = `${hh}:${mm}<span style="font-size:10px; color:#444;">${suffix}</span>`;
+            });
+            document.querySelectorAll('.local-time-24').forEach(el => {
+                const offset = parseFloat(el.dataset.offset);
+                const local = new Date(utc + (3600000 * offset));
+                el.innerText = `[ ${local.getHours().toString().padStart(2,'0')}:${local.getMinutes().toString().padStart(2,'0')} ]`;
+            });
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>

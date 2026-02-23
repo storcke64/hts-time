@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - Converters</title>
+    <style>
+        :root { 
+            --neon-blue: #00d4ff; 
+            --neon-green: #39ff14; 
+            --bg-obsidian: #0a0a0a; 
+            --panel-bg: #111111;
+            --input-bg: #050505;
+            --border-color: #222;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+        }
+
+        body { 
+            background-color: var(--bg-obsidian); color: white; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* GLOBAL NAV */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
+
+        /* MAIN STAGE */
+        .main-stage {
+            display: flex; width: 100%; flex: 1;
+            position: relative; background: var(--bg-obsidian);
+            border-top: 8px solid #0d0d0d;
+        }
+
+        /* SIDEBAR NAV */
+        .side-nav {
+            width: 240px; display: flex; flex-direction: column; gap: 15px;
+            padding: 40px; border-right: 1px solid #1a1a1a;
+            background: #0e0e0e;
+        }
+        .side-btn {
+            background: transparent; border: 1px solid #333; 
+            color: #888; padding: 15px; text-align: left; 
+            font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; transition: 0.2s; border-radius: 4px;
+        }
+        .side-btn:hover { border-color: var(--neon-blue); color: white; }
+        .side-btn.active { 
+            background: rgba(0, 212, 255, 0.1); 
+            border-color: var(--neon-blue); 
+            color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.1);
+        }
+
+        /* CONTENT DECK */
+        .content-deck {
+            flex: 1; position: relative; padding: 60px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+
+
+        /* MODULE VISIBILITY */
+        .module { display: none; width: 100%; max-width: 1000px; animation: fadeIn 0.3s ease; }
+        .module.visible { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- STYLING --- */
+        
+        .deep-grid { display: flex; justify-content: space-between; gap: 40px; margin-top: 60px; }
+        .deep-panel { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        
+        .panel-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: bold; color: #666; }
+        
+        .input-box { 
+            width: 100%; border: 1px solid #333; border-radius: 8px; 
+            background: var(--panel-bg); padding: 15px; position: relative; 
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.3s;
+        }
+        .input-box:focus-within { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 212, 255, 0.1); }
+
+        .deep-input { 
+            background: transparent; border: none; color: white; 
+            font-family: 'Courier New', monospace; font-size: 28px; font-weight: bold; 
+            width: 100%; outline: none; 
+        }
+
+        .spinner { display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+        .spin-btn { font-size: 10px; color: #666; transition: 0.2s; }
+        .spin-btn:hover { color: var(--neon-blue); }
+
+        .result-display { 
+            font-family: 'Segoe UI', sans-serif; font-weight: bold; font-size: 42px; margin-top: 25px; 
+            letter-spacing: 1px; text-transform: uppercase; 
+        }
+        .res-blue { color: var(--neon-blue); }
+        .res-green { color: var(--neon-green); }
+
+        /* SIMPLE CARDS */
+        .simple-card {
+            border: 1px solid #222; background: var(--panel-bg); padding: 40px; margin-top: 60px;
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            border-radius: 10px;
+        }
+        .simple-input {
+            background: var(--input-bg); border: 1px solid #333; color: white;
+            padding: 15px; font-size: 32px; text-align: center; width: 300px;
+            font-family: 'Courier New', monospace; border-radius: 5px;
+            transition: 0.3s;
+        }
+        .simple-input:focus { border-color: var(--neon-blue); outline: none; }
+
+        .info-bar {
+            position: absolute; bottom: 40px; width: 100%; max-width: 1000px;
+            text-align: center; color: #444; font-size: 11px; letter-spacing: 1px;
+            border-top: 1px solid #222; padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link">CLOCK</a>
+        <a href="converters.html" class="tab-link active">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="status.html" class="tab-link">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link">FEATURES</a>
+        <a href="about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div class="main-stage">
+        
+
+
+        <div class="side-nav">
+            <button class="side-btn active" onclick="showModule('deep')">Deep Lookup</button>
+            <button class="side-btn" onclick="showModule('greg')">Greg to HTS</button>
+            <button class="side-btn" onclick="showModule('hts')">HTS to Greg</button>
+            <button class="side-btn" onclick="showModule('rel')">Relative</button>
+        </div>
+
+        <div class="content-deck">
+            
+            <div id="mod-deep" class="module visible">
+                <div class="deep-grid">
+                    <div class="deep-panel">
+                        <span class="panel-label">YEARS INTO PAST</span>
+                        <div class="input-box">
+                            <input type="number" id="pastInput" class="deep-input" value="20000" oninput="calcDeep()">
+                            <div class="spinner"><span class="spin-btn" onclick="step('pastInput',1000)">▲</span><span class="spin-btn" onclick="step('pastInput',-1000)">▼</span></div>
+                        </div>
+                        <div id="pastResult" class="result-display res-blue">--</div>
+                    </div>
+                    <div class="deep-panel">
+                        <span class="panel-label">YEARS INTO FUTURE</span>
+                        <div class="input-box">
+                            <input type="number" id="futureInput" class="deep-input" value="100000" oninput="calcDeep()">
+                            <div class="spinner"><span class="spin-btn" onclick="step('futureInput',1000)">▲</span><span class="spin-btn" onclick="step('futureInput',-1000)">▼</span></div>
+                        </div>
+                        <div id="futureResult" class="result-display res-green">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mod-greg" class="module">
+                <div class="simple-card">
+                    <span class="panel-label">ENTER GREGORIAN YEAR</span>
+                    <input type="number" id="gregSimpleIn" class="simple-input" placeholder="2026" oninput="calcSimple('GREG')">
+                    <div id="gregSimpleOut" class="result-display res-green" style="font-size: 56px;">A40003</div>
+                </div>
+            </div>
+
+            <div id="mod-hts" class="module">
+                <div class="simple-card">
+                    <span class="panel-label">ENTER HTS NOTATION</span>
+                    <input type="text" id="htsSimpleIn" class="simple-input" placeholder="1A40003" oninput="calcSimple('HTS')">
+                    <div id="htsSimpleOut" class="result-display res-blue" style="font-size: 56px;">2026 CE</div>
+                </div>
+            </div>
+
+            <div id="mod-rel" class="module">
+                <div class="simple-card">
+                    <span class="panel-label">YEARS FROM NOW (2023 BASELINE)</span>
+                    <div class="input-box" style="width: 250px; margin-bottom: 10px;">
+                        <input type="number" id="relIn" class="deep-input" value="50" oninput="calcRel()">
+                        <div class="spinner"><span class="spin-btn" onclick="step('relIn',10)">▲</span><span class="spin-btn" onclick="step('relIn',-10)">▼</span></div>
+                    </div>
+                    <div id="relOut" class="result-display res-green" style="font-size: 56px;">--</div>
+                </div>
+            </div>
+
+            <div class="info-bar" id="infoText">
+                DEEP TEMPORAL OBSERVATORY: Verify HTS Epoch States (50,000 Year Cycles)
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // === KERNEL LOGIC ===
+        const ANCHOR_GREG = new Date().getFullYear();
+        const HTS_OFFSET = 37977;
+        const EPOCH_LEN = 50000;
+        const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function showModule(id) {
+            document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.module').forEach(m => m.classList.remove('visible'));
+            document.getElementById('mod-' + id).classList.add('visible');
+
+            // Text Update
+            const txt = document.getElementById('infoText');
+            if(id === 'deep') txt.innerText = "DEEP TEMPORAL OBSERVATORY: Verify HTS Epoch States.";
+            if(id === 'greg') txt.innerText = "STANDARD TRANSLATOR: Gregorian (CE) -> Storcke Time.";
+            if(id === 'hts') txt.innerText = "REVERSE PARSER: Storcke Time -> Gregorian (CE).";
+            if(id === 'rel') txt.innerText = "RELATIVE PROJECTION: Calculate future Epochs from 2023 baseline.";
+            
+            if(id === 'deep') calcDeep();
+            if(id === 'rel') calcRel();
+        }
+
+        function step(id, val) {
+            const el = document.getElementById(id);
+            el.value = (parseInt(el.value)||0) + val;
+            if(id === 'relIn') calcRel();
+            else calcDeep();
+        }
+
+        function calcDeep() {
+            const p = parseInt(document.getElementById('pastInput').value)||0;
+            const f = parseInt(document.getElementById('futureInput').value)||0;
+            document.getElementById('pastResult').innerText = calculateHTS(ANCHOR_GREG - p);
+            document.getElementById('futureResult').innerText = calculateHTS(ANCHOR_GREG + f);
+        }
+
+        function calcSimple(mode) {
+            if(mode === 'GREG') {
+                const val = parseInt(document.getElementById('gregSimpleIn').value);
+                document.getElementById('gregSimpleOut').innerText = isNaN(val) ? "--" : calculateHTS(val);
+            } else {
+                const input = document.getElementById('htsSimpleIn').value;
+                const data = parseHTS(input);
+                const out = document.getElementById('htsSimpleOut');
+                
+                if (!data) { out.innerText = "INVALID"; return; }
+                
+                const letterVal = LETTERS.indexOf(data.letter);
+                if (letterVal === -1) { out.innerText = "INVALID LETTER"; return; }
+
+                // Reverse Math
+                const totalEpochs = ((data.super - 1) * 26) + letterVal;
+                const totalYears = (totalEpochs * 50000) + data.year;
+                const gregYear = totalYears - 40000 + 2023;
+                const suffix = gregYear >= 0 ? " CE" : " BCE";
+                
+                out.innerText = Math.abs(gregYear) + suffix;
+            }
+        }
+
+        function calcRel() {
+            const jump = parseInt(document.getElementById('relIn').value)||0;
+            // Baseline 2023
+            const target = 2023 + jump;
+            document.getElementById('relOut').innerText = calculateHTS(target);
+        }
+
+        function calculateHTS(gregYear) {
+            let absYear = gregYear + HTS_OFFSET;
+            if (absYear < 0) return "PRE-HTS";
+            let epochIdx = Math.floor(absYear / EPOCH_LEN);
+            let cycle = Math.floor(epochIdx / 26) + 1;
+            let letter = LETTERS[epochIdx % 26];
+            let year = absYear % EPOCH_LEN;
+            return `${cycle}${letter}${year}`;
+        }
+
+        function parseHTS(str) {
+            str = str.toUpperCase().trim();
+            const match = str.match(/^(\d+)([A-Z])(\d+)$/);
+            if (!match) return null;
+            return {
+                super: parseInt(match[1]),
+                letter: match[2],
+                year: parseInt(match[3])
+            };
+        }
+
+        window.onload = function() {
+            calcDeep();
+            document.getElementById('gregSimpleIn').value = ANCHOR_GREG;
+            calcSimple('GREG');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS VCR Unit</title>
+    <style>
+        :root {
+            --chassis: #1a1a1a;
+            --faceplate: #222;
+            --vfd-bg: #050505;
+            --vfd-glow: #00f0ff; /* Cyan VFD Look */
+            --led-red: #ff3333;
+            --btn-grad: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
+        }
+
+        /* STRICT RESET */
+        *, *::before, *::after { box-sizing: border-box; user-select: none; }
+
+        html, body { 
+            height: 100%; width: 100%; margin: 0; padding: 0;
+            background: transparent;
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow: hidden;
+            display: block; /* FIX: flex+center shrinks body, poisoning 100vw in parent */
+        }
+
+        /* --- THE APPLIANCE CHASSIS --- */
+        .vcr-unit {
+            width: 900px;
+            max-width: 98%;
+            height: auto;
+            background: linear-gradient(to bottom, #2a2a2a, #111);
+            border-top: 1px solid #444;
+            border-bottom: 4px solid #000;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+            display: flex; flex-direction: column;
+            position: relative;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+            margin: auto auto 0 auto; /* bottom-anchor within block body */
+        }
+
+        /* Feet */
+        .vcr-unit::after {
+            content: ''; position: absolute; bottom: -5px; left: 20px; right: 20px;
+            height: 5px; background: transparent;
+            box-shadow: 0 5px 0 #111, 840px 5px 0 #111;
+            pointer-events: none;
+        }
+
+        /* --- MAIN FACEPLATE --- */
+        .deck-face {
+            display: flex; padding: 15px 20px; gap: 15px;
+            width: 100%; height: 130px;
+            align-items: center;
+        }
+
+        /* --- LEFT: BRANDING --- */
+        .brand-panel {
+            display: flex; flex-direction: column; justify-content: space-between;
+            width: 90px; height: 100%; 
+            border-right: 2px solid #151515; padding-right: 15px;
+        }
+        
+        .logo {
+            color: #666; font-weight: 900; font-size: 14px; font-style: italic; letter-spacing: 1px;
+            text-shadow: 0 -1px 0 #000;
+        }
+
+        .vhs-badge {
+            font-family: Helvetica, Arial, sans-serif; font-weight: 900; font-size: 14px;
+            color: #444; border: 1px solid #333; padding: 0 2px; text-align: center;
+            letter-spacing: 1px; box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+        }
+        
+        .power-btn {
+            width: 100%; height: 25px; background: #111; border: 1px solid #333; border-radius: 2px;
+            position: relative; cursor: pointer; box-shadow: inset 0 5px 10px rgba(0,0,0,0.5);
+        }
+        .power-led {
+            width: 6px; height: 6px; background: #500; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 0 2px #500; transition: 0.3s;
+        }
+        .power-btn.on .power-led { background: var(--led-red); box-shadow: 0 0 8px var(--led-red); }
+
+        /* --- CENTER: VFD SCREEN --- */
+        .vfd-window {
+            flex: 1; height: 100%;
+            background: var(--vfd-bg);
+            border: 2px solid #333; border-top-color: #111; border-bottom-color: #444;
+            border-radius: 4px; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: center;
+            padding: 0 20px; box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+            min-width: 0;
+        }
+
+        .vfd-window::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent);
+            pointer-events: none;
+        }
+
+        .lcd-text {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-family: 'Courier New', monospace; text-transform: uppercase;
+        }
+        .main-status {
+            color: var(--vfd-glow); font-size: 18px; font-weight: bold; letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); margin-bottom: 5px;
+        }
+        .sub-status { color: rgba(0, 240, 255, 0.6); font-size: 12px; letter-spacing: 1px; }
+
+        /* --- RIGHT: TRANSPORT --- */
+        .controls-panel {
+            display: flex; align-items: center; gap: 6px; 
+            padding-left: 10px; border-left: 2px solid #151515; height: 100%;
+        }
+
+        .transport-btn {
+            width: 40px; height: 32px;
+            background: var(--btn-grad);
+            border: 1px solid #000; border-top: 1px solid #444; border-radius: 2px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: #aaa; font-size: 12px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.5); transition: all 0.1s;
+        }
+        .transport-btn:active {
+            transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            background: #111; color: var(--vfd-glow); border-top-color: #222;
+        }
+
+        .btn-play { width: 50px; font-weight: bold; border-bottom: 3px solid #000; }
+        .btn-play:active { border-bottom: 1px solid #000; }
+        
+        .btn-eject { color: #ff3333; font-size: 9px; font-weight: bold; margin-left: 5px; }
+        
+        .btn-utility { 
+            width: 35px; 
+            margin-left: 5px; 
+            border-left: 2px solid #0a0a0a;
+            background: linear-gradient(to bottom, #2a2a2a, #111);
+        }
+        .btn-utility:active {
+            background: #0a0a0a;
+        }
+
+        /* --- FLIP DOWN DOOR --- */
+        .door-latch {
+            width: 100%; height: 18px;
+            background: #151515;
+            border-top: 1px solid #2a2a2a;
+            cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: 0.2s;
+            position: relative;
+        }
+        
+        /* GRIP TEXTURE */
+        .door-latch::after {
+            content: ''; width: 60px; height: 6px;
+            background: repeating-linear-gradient(
+                90deg, 
+                #222, #222 2px, 
+                #111 2px, #111 4px
+            );
+            border-radius: 2px;
+        }
+        
+        .door-latch:hover { background: #1a1a1a; }
+        .door-latch:hover::after { border: 1px solid #333; }
+
+        /* HIDDEN COMPARTMENT */
+        .hidden-compartment {
+            height: 0; overflow: hidden;
+            background: #0a0a0a;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.9);
+            transition: height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+            border-top: 1px solid #000; padding: 0 25px;
+        }
+        
+        .hidden-compartment.open { height: 55px; border-bottom: 1px solid #222; }
+
+        .svc-btn {
+            background: #111; border: 1px solid #333;
+            color: #555; font-size: 9px; font-weight: bold; letter-spacing: 1px;
+            padding: 6px 12px; cursor: pointer; border-radius: 2px;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.05); transition: 0.2s;
+        }
+        .svc-btn:hover { color: var(--vfd-glow); border-color: #555; background: #181818; }
+        .svc-btn.danger:hover { color: var(--led-red); }
+        
+        .prog-label {
+            margin-right: auto; color: #333; font-size: 9px; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        #vid-scroller { display: none; }
+        .led-indicator-row { display: flex; gap: 2px; position: absolute; bottom: 5px; right: 10px; }
+        .mini-led { width: 4px; height: 4px; background: #333; border-radius: 50%; }
+        .mini-led.active { background: var(--vfd-glow); box-shadow: 0 0 5px var(--vfd-glow); }
+
+    </style>
+</head>
+<body>
+
+    <div class="vcr-unit">
+        
+        <div class="deck-face">
+            
+            <div class="brand-panel">
+                <div class="logo">HTS-9000</div>
+                <div class="vhs-badge">VHS</div>
+                <div class="power-btn on" title="System Power" onclick="sendCmd('exit')">
+                    <div class="power-led"></div>
+                </div>
+            </div>
+
+            <div class="vfd-window">
+                <div class="lcd-text main-status" id="lcd-main">STANDBY</div>
+                <div class="lcd-text sub-status" id="lcd-sub">NO TAPE INSERTED</div>
+                <div class="led-indicator-row" id="playlist-dots"></div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="transport-btn" onclick="sendCmd('prev')" title="Prev">|&#9664;</div>
+                <div class="transport-btn" onclick="sendCmd('rewind')" title="Rewind">&#9664;&#9664;</div>
+                
+                <div class="transport-btn" onclick="sendCmd('stop')" title="Stop">
+                    <div style="width:8px; height:8px; background:#aaa;"></div>
+                </div>
+
+                <div class="transport-btn btn-play" onclick="sendCmd('toggle')" title="Play/Pause">&#9654;</div>
+                <div class="transport-btn" onclick="sendCmd('fast_forward')" title="Fwd">&#9654;&#9654;</div>
+                <div class="transport-btn" onclick="sendCmd('next')" title="Next">&#9654;|</div>
+                
+                <div class="transport-btn btn-eject" onclick="sendCmd('import')" title="Eject/Load">EJECT</div>
+                
+                <!-- New utility buttons -->
+                <div class="transport-btn btn-utility" onclick="sendCmd('toggle_settings')" title="Settings">
+                    <div style="font-size:10px;">⚙</div>
+                </div>
+                <div class="transport-btn btn-utility" onclick="sendCmd('doctor')" title="Doctor">
+                    <div style="font-size:10px;">🩺</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="door-latch" onclick="toggleDoor()" title="Open Programming Bay"></div>
+        
+        <div class="hidden-compartment" id="prog-bay">
+            <div class="prog-label">Programming Bay</div>
+            <div class="svc-btn" onclick="sendCmd('doctor')">DOCTOR</div>
+            <div class="svc-btn" onclick="sendCmd('manual')">TRACKING</div>
+            <div class="svc-btn" onclick="sendCmd('toggle_settings')">MENU</div>
+            <div class="svc-btn danger" onclick="sendCmd('exit')">OFF</div>
+        </div>
+
+        <div id="vid-scroller"></div>
+
+    </div>
+
+    <script>
+        function sendCmd(action, data) {
+            window.parent.postMessage({ type: 'HTS_CMD', action: action, data: data }, '*');
+        }
+
+        function toggleDoor() {
+            document.getElementById('prog-bay').classList.toggle('open');
+        }
+
+        window.addEventListener('message', function(e) {
+            const msg = e.data;
+            if (msg.type === 'UPDATE_LCD') {
+                document.getElementById('lcd-main').innerText = msg.main;
+                document.getElementById('lcd-sub').innerText = msg.sub;
+            }
+            if (msg.type === 'RENDER_LIST') { if (typeof renderList === 'function') renderList(msg.pool, msg.activeIdx); }
+        });
+
+        function renderList(pool, activeIdx) {
+            var container = document.getElementById('playlist-dots');
+            if (!container || !pool) return;
+            container.innerHTML = "";
+            var max = Math.min(pool.length, 20);
+            for (var i = 0; i < max; i++) {
+                var item = pool[i];
+                var isFav = item && item.favorite === true;
+                var dot = document.createElement('div');
+                dot.className = 'mini-led' + (i === activeIdx ? ' active' : '');
+                if (isFav) dot.style.cssText = "background:#39ff14!important;box-shadow:0 0 6px #39ff14!important;border-color:#39ff14!important;";
+                dot.title = item ? item.name : '';
+                dot.onclick = (function(idx){ return function(){ sendCmd('play_idx', idx); }; })(i);
+                container.appendChild(dot);
+            }
+        }
+
+        sendCmd('system_audit', 'THEME_VHS_LOADED');
+    </script>
+</body>
+</html>

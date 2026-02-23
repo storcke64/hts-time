@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - About the System</title>
+    <style>
+        :root { 
+            --neon-blue: #00d4ff; 
+            --neon-green: #39ff14; 
+            --neon-gold: #ffd700;
+            --neon-red: #ff3131;
+            --neon-purple: #bc13fe;
+            --bg-obsidian: #0a0a0a; 
+            --panel-bg: #111111;
+            --border-dim: #222;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+        }
+
+        body { 
+            background-color: var(--bg-obsidian); color: white; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+
+        /* --- UNIFIED NAV (Matched to empty.html) --- */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
+
+        /* --- CONTENT VIEWPORT --- */
+        #content-viewport {
+            width: 100%;
+            height: calc(100vh - 65px); 
+            overflow-y: auto;
+            background: var(--bg-obsidian);
+        }
+
+        .page-content-scroll { padding: 60px 40px; max-width: 1000px; margin: 0 auto; width: 90%; }
+        
+        .neon-h1 { 
+            color: var(--neon-blue); 
+            text-shadow: 0 0 15px var(--neon-blue); 
+            font-size: 3rem; 
+            margin-bottom: 50px; 
+            text-align: center;
+        }
+
+        /* --- ABOUT CARD ARCHITECTURE --- */
+        .about-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 4px solid var(--neon-blue);
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 0 10px 10px 0;
+            transition: 0.3s;
+        }
+        .about-card:hover { background: rgba(255, 255, 255, 0.05); }
+        .about-card h3 { margin-top: 0; color: var(--neon-blue); letter-spacing: 1px; }
+        .about-card p { color: #ccc; line-height: 1.6; font-size: 15px; margin-bottom: 0; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link">CLOCK</a>
+        <a href="converters.html" class="tab-link">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="status.html" class="tab-link">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link">FEATURES</a>
+        <a href="about.html" class="tab-link active">ABOUT</a>
+    </nav>
+
+    <div id="content-viewport">
+        <div class="page-content-scroll">
+            <h1 class="neon-h1">About HTS</h1>
+
+            <div class="about-card" onclick="window.location.href='about/origin.html'" style="cursor: pointer;">
+                <h3>THE ORIGIN</h3>
+                <p>HTS was created to simplify the calendar for future generations. It uses a stable 5-digit year to provide a timeline that is easy to use and lasts for tens of billions of years.</p>
+            </div>
+            
+            <div class="about-card" style="border-left-color: var(--neon-green);">
+                <h3 style="color: var(--neon-green);">DECIMAL PRECISION</h3>
+                <p>By utilizing a base-10 epoch system, HTS eliminates the irregular "leap year" logic found in traditional Gregorian systems.</p>
+            </div>
+
+            <div class="about-card" style="border-left-color: var(--neon-red);">
+                <h3 style="color: var(--neon-red);">UNIVERSAL ADOPTION</h3>
+                <p>Designed for interplanetary synchronization, HTS provides a unified rhythmic anchor for a multi-planetary human civilization.</p>
+            </div>
+            
+            <div class="about-card" style="border-left-color: var(--neon-purple); cursor: pointer;" onclick="window.location.href='about/ecosystem/ecosystem.html'">
+                <h3 style="color: var(--neon-purple);">ECOSYSTEM</h3>
+                <p>Integrating biological and digital rhythms into a single, cohesive framework of time perception.</p>
+            </div>
+            
+            <div class="about-card" style="border-left-color: var(--neon-gold);">
+                <h3 style="color: var(--neon-gold);">THE HUMAN TIME SYSTEM FOUNDATION</h3>
+                <p>A future entity responsible for worldwide governance 98,000 years from now. Their mission: To ensure the world never exceeds 5-digit years, preventing the tedium of over-extended dates by cycling Epochs instead of adding digits.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" || e.key === "Backspace") {
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>

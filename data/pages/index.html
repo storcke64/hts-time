@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - Master Clock</title>
+
+    <style>
+        :root {
+            --bg-obsidian: #0a0a0a;
+            --neon-blue: #00d4ff;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+            --ruler-green: #39ff14;
+        }
+
+        html, body { 
+            height: 100%; width: 100%; margin: 0; padding: 0; 
+            overflow: hidden; background: var(--bg-obsidian); 
+        }
+
+        *, *:focus { outline: none !important; cursor: none; }
+        body:hover, body:hover * { cursor: auto; }
+
+        body {
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAVIGATION BAR */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
+
+        #projector-canvas {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: var(--bg-obsidian);
+            transition: margin-bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .clock-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        
+        .status-icons { position: absolute; top: 40px; left: 60px; display: flex; flex-direction: column; gap: 20px; }
+        .icon-bell { width: 45px; height: 45px; background: url('bell.png') no-repeat center/contain; }
+        .icon-moon { width: 65px; height: 65px; background: url('moon.png') no-repeat center/contain; }
+        
+
+
+        /* --- LOGO --- */
+        .pendulum-logo { 
+            position: fixed; 
+            top: 60px; 
+            right: 4px; 
+            width: 160px; 
+            height: 160px;
+            object-fit: contain; 
+            z-index: 500;
+            filter: drop-shadow(0 0 8px var(--neon-glow));
+        }
+
+        .day-display { font-size: 26px; color: #555; font-family: monospace; letter-spacing: 10px; text-transform: uppercase; }
+        .main-time { font-size: 280px; font-family: 'Arial Black', sans-serif; color: var(--neon-blue); text-shadow: 0 0 30px var(--neon-glow); line-height: 0.9; margin: 15px 0; letter-spacing: -12px; }
+        .hts-date-line { font-size: 65px; color: var(--neon-blue); font-family: monospace; font-weight: bold; letter-spacing: 4px; }
+        .alt-ref { position: absolute; bottom: 40px; right: 60px; font-size: 34px; color: #333; font-family: monospace; }
+
+        #curtain-ruler {
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            height: 2px; border-top: 2px dashed var(--ruler-green);
+            display: none; z-index: 50; pointer-events: none;
+        }
+        body.show-ruler #curtain-ruler { display: block; }
+
+        .clock-controls { position: absolute; bottom: 40px; left: 60px; display: flex; align-items: center; gap: 25px; }
+        .toggle-wrap { display: flex; align-items: center; gap: 10px; background: #161616; padding: 5px 15px; border-radius: 20px; border: 1px solid #333; }
+        .slider-bt { width: 40px; height: 20px; background: #222; border-radius: 10px; position: relative; cursor: pointer; }
+        .slider-bt .dot { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: var(--neon-blue); border-radius: 50%; transition: 0.2s; }
+        .slider-bt.active .dot { left: 23px; }
+        
+        .swap-btn-container { 
+            width: 44px; height: 44px; border-radius: 50%; border: 2px solid #333; 
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; background: #161616; 
+        }
+        .swap-icon { width: 30px; height: 30px; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0MCIgc3Ryb2tlPSIjMDBkNGZmIiBzdHJva2Utd2lkdGg9IjUiIGZpbGw9Im5vbmUiLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZpbGw9IiMwMGQ0ZmYiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiPkhUUzwvdGV4dD48L3N2Zz4=') no-repeat center/contain; }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link active">CLOCK</a>
+        <a href="converters.html" class="tab-link">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="status.html" class="tab-link">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link">FEATURES</a>
+        <a href="about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div id="projector-canvas">
+        <div id="curtain-ruler"></div>
+
+        <main class="clock-content">
+            <img src="../logo.png" class="pendulum-logo" alt="HTS Logo">
+            
+
+
+            <div class="status-icons"><div class="icon-bell"></div><div class="icon-moon"></div></div>
+            <div id="display-day" class="day-display">WEDNESDAY</div>
+            <div id="display-time" class="main-time">00:00</div>
+            <div id="display-hts" class="hts-date-line">A40003</div>
+            
+            <div class="clock-controls">
+                <div class="toggle-wrap">
+                    <div id="time-toggle" class="slider-bt active" onclick="HTS_UI.toggleFormat()">
+                        <div class="dot"></div>
+                    </div>
+                </div>
+                <div class="swap-btn-container" onclick="HTS_UI.swapDates()">
+                    <div class="swap-icon"></div>
+                </div>
+            </div>
+
+            <div id="display-greg" class="alt-ref">2026 CE</div>
+        </main>
+    </div>
+
+    <script>
+    const HTS_UI = {
+        is24Hour: true,
+        isSwapped: false,
+        curtainPos: 0, 
+
+        init: function() {
+            this.curtainPos = parseInt(localStorage.getItem('hts_curtain_pos')) || 0;
+            this.applyCurtain();
+
+            window.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.altKey) {
+                    if (e.key === '=' || e.key === '+') { this.rollCurtain(10); e.preventDefault(); }
+                    if (e.key === '-' || e.key === '_') { this.rollCurtain(-10); e.preventDefault(); }
+                    if (e.key === '0') { document.body.classList.toggle('show-ruler'); e.preventDefault(); }
+                }
+            });
+        },
+
+        rollCurtain: function(delta) {
+            this.curtainPos += delta;
+            if (this.curtainPos < 0) this.curtainPos = 0;
+            this.applyCurtain();
+            localStorage.setItem('hts_curtain_pos', this.curtainPos);
+        },
+
+        applyCurtain: function() {
+            document.getElementById('projector-canvas').style.marginBottom = this.curtainPos + 'px';
+        },
+
+        toggleFormat: function() {
+            this.is24Hour = !this.is24Hour;
+            document.getElementById('time-toggle').classList.toggle('active', !this.is24Hour);
+            tick();
+        },
+        
+        swapDates: function() {
+            this.isSwapped = !this.isSwapped;
+            tick();
+        }
+    };
+
+    function tick() {
+        const now = new Date();
+        const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+        const year = now.getFullYear();
+        
+        let hh = now.getHours();
+        const mm = now.getMinutes().toString().padStart(2, '0');
+        let ampm = "";
+
+        if(!HTS_UI.is24Hour) {
+            ampm = hh >= 12 ? " PM" : " AM";
+            hh = hh % 12 || 12;
+        } else {
+            hh = hh.toString().padStart(2, '0');
+        }
+
+        const totalHTS = (year - 2023) + 40000;
+        const htsFull = `${String.fromCharCode(65 + (Math.floor(totalHTS / 50000) % 26))}${totalHTS % 50000}`;
+        const gregFull = `${year} CE`;
+
+        document.getElementById('display-day').innerText = days[now.getDay()];
+        document.getElementById('display-time').innerText = `${hh}:${mm}${ampm}`;
+
+        if (HTS_UI.isSwapped) {
+            document.getElementById('display-hts').innerText = gregFull;
+            document.getElementById('display-greg').innerText = htsFull;
+            document.getElementById('display-greg').style.color = 'var(--neon-blue)';
+            document.getElementById('display-hts').style.color = '#333';
+        } else {
+            document.getElementById('display-hts').innerText = htsFull;
+            document.getElementById('display-greg').innerText = gregFull;
+            document.getElementById('display-greg').style.color = '#333';
+            document.getElementById('display-hts').style.color = 'var(--neon-blue)';
+        }
+    }
+
+    HTS_UI.init();
+    setInterval(tick, 1000);
+    tick();
+    </script>
+</body>
+</html>

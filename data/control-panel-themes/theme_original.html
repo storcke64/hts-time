@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS Control Panel- ORIGINAL</title>
+    <style>
+        :root {
+            --neon-blue: #00d4ff; --neon-green: #39ff14; --neon-red: #ff3131;
+            --bg-dark: #0a0e14; --panel-border: #b0f2ff;
+            --screen-bg: #7cfc00; --screen-text: #000000;
+        }
+
+        html, body { 
+            height: 100%; width: 100%; margin: 0; padding: 0; 
+            background: transparent; 
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            display: block; /* FIX: flex+center shrinks body, poisoning 100vw in parent */
+            user-select: none;
+        }
+
+        *, *:focus { outline: none; cursor: none; box-sizing: border-box; }
+        body:hover { cursor: auto; }
+
+        .config-dashboard {
+            width: fit-content; max-width: 950px; margin: 0 auto; background: var(--bg-dark); 
+            border: 4px solid var(--panel-border); border-radius: 12px;
+            display: flex; padding: 15px; gap: 20px; 
+            box-shadow: 0 0 30px rgba(176, 242, 255, 0.2);
+            max-height: 300px;
+        }
+
+        .cc-col { display: flex; flex-direction: column; gap: 10px; }
+
+        #vid-scroller { 
+            display: block;
+            height: 155px; 
+            max-height: 155px;
+            width: 320px; 
+            overflow-y: auto; 
+            background: #000; 
+            border: 1px solid #333; 
+            border-radius: 6px; 
+            scrollbar-width: thin; 
+            scrollbar-color: #333 #000;
+        }
+        
+        .vid-row { 
+            display: flex; align-items: center; gap: 6px;
+            height: 35px; width: 100%; border-bottom: 1px solid #1a1a1a;
+            cursor: pointer; padding: 0 6px 0 8px; box-sizing: border-box;
+        }
+        .vid-row.active { background: rgba(0, 212, 255, 0.1); border-left: 3px solid var(--neon-blue); }
+        .vid-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .vid-name { 
+            flex: 1; min-width: 0;
+            font-family: monospace; font-size: 11px; color: #666;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .vid-row.active .vid-name { color: white; }
+        .vid-del { 
+            flex-shrink: 0; margin-right: 4px;
+            background: rgba(50,0,0,0.5); border: 1px solid #555; color: #888; 
+            font-family: monospace; font-size: 10px; cursor: pointer; 
+            padding: 2px 6px; border-radius: 3px; font-weight: bold;
+        }
+        .vid-del:hover { color: var(--neon-red); border-color: var(--neon-red); background: rgba(255, 0, 0, 0.2); }
+
+        /* FAVORITE BUBBLE — defined here so it works before DNA injection fires */
+        .hts-fav-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            flex-shrink: 0 !important; min-width: 10px !important;
+            display: inline-block; cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .hts-fav-dot.on  { background: #39ff14; box-shadow: 0 0 7px #39ff14; }
+        .hts-fav-dot.off { background: transparent; border: 1px solid #444; }
+        .hts-fav-dot:hover { border-color: #39ff14; }
+
+        .cc-lcd {
+            background: var(--screen-bg); color: var(--screen-text); 
+            width: 500px; height: 88px; border-radius: 6px; 
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.4); 
+            text-transform: uppercase; margin-bottom: 10px;
+            padding: 0 15px; 
+        }
+        
+        #lcd-main { 
+            font-size: 20px; font-weight: bold; width: 100%; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+        
+        #lcd-sub { 
+            font-size: 12px; font-family: monospace; opacity: 0.9;
+            width: 100%; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            letter-spacing: 1px;
+        }
+
+        .control-row { display: flex; justify-content: space-between; gap: 8px; width: 100%; height: 38px; }
+        .cc-btn { 
+            background: rgba(255,255,255,0.02); border: 2px solid var(--panel-border); 
+            color: white; flex: 1; font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 4px;
+            transition: 0.2s; text-transform: uppercase; display: flex; align-items: center; justify-content: center;
+        }
+        .cc-btn:hover { background: rgba(176,242,255,0.15); box-shadow: 0 0 10px var(--panel-border); }
+        .cc-btn:active { transform: translateY(2px); }
+        .cc-btn.exit { border-color: var(--neon-red); color: var(--neon-red); }
+        .play-pause-btn { flex: 2.5; font-size: 12px; border-width: 3px; }
+
+        .cc-sec-strip { display: flex; gap: 5px; background: rgba(255,255,255,0.03); padding: 5px; border-radius: 6px; }
+        .icon-play { width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid #666; }
+        .radio-out { width: 14px; height: 14px; border: 2px solid #555; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .radio-in { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-blue); transform: scale(0); transition: 0.2s; }
+        .radio-out.selected { border-color: var(--neon-blue); }
+        .radio-out.selected .radio-in { transform: scale(1); }
+    </style>
+</head>
+<body>
+
+<div class="config-dashboard">
+    <div class="cc-col" style="width: 320px;">
+        <div style="font-size: 9px; color:var(--panel-border); letter-spacing: 2px; font-weight:bold;">VAULTED MEDIA</div>
+        <div id="vid-scroller"></div>
+        <div class="cc-sec-strip">
+            <button class="cc-btn" style="flex:1;" onclick="triggerImport()">+ IMPORT</button>
+            <button class="cc-btn" style="flex:1; border-color: var(--neon-blue); color: var(--neon-blue);" onclick="triggerExpand()">EXPAND LIST</button>
+        </div>
+    </div>
+
+    <div class="cc-col">
+        <div class="cc-lcd">
+            <div id="lcd-main">SYSTEM OFFLINE</div>
+            <div id="lcd-sub">WAITING FOR HOST...</div>
+        </div>
+
+        <div class="control-row">
+            <button class="cc-btn" onclick="sendCmd('fullscreen')">FULL SCRN</button>
+            <button class="cc-btn" onclick="sendCmd('prev')">PREV</button>
+            <button class="cc-btn" onclick="sendCmd('rewind')">⏪ REW</button>
+            <button class="cc-btn play-pause-btn" onclick="sendCmd('toggle')">PLAY / PAUSE</button>
+            <button class="cc-btn" onclick="sendCmd('fast_forward')">FF ⏩</button>
+            <button class="cc-btn" onclick="sendCmd('next')">NEXT</button>
+            <button class="cc-btn" onclick="sendCmd('stop')">STOP</button>
+        </div>
+
+        <div class="control-row">
+            <button class="cc-btn" 
+                onmousedown="startSaverPress()" 
+                onmouseup="endSaverPress()" 
+                onmouseleave="abortSaverPress()">
+                SCREENSAVER
+            </button>
+
+            <button class="cc-btn" onclick="sendCmd('doctor')">DOCTOR</button>
+            <button class="cc-btn" onclick="sendCmd('manual')">MANUAL</button>
+            <button class="cc-btn" onclick="sendCmd('volume')">MUTE</button>
+            
+            <button class="cc-btn" onclick="sendCmd('toggle_settings')">SETTINGS</button>
+            <button class="cc-btn exit" onclick="sendCmd('exit')">EXIT</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function triggerImport() {
+        window.parent.postMessage({ type: 'HTS_CMD', action: 'import' }, '*');
+    }
+
+    function triggerExpand() {
+        window.parent.postMessage({ type: 'HTS_CMD', action: 'expand_list' }, '*');
+    }
+
+    function sendCmd(action, payload) {
+        window.parent.postMessage({ type: 'HTS_CMD', action: action, data: payload }, '*');
+    }
+
+    function deleteVideo(e) {
+        e.stopPropagation(); 
+        if (confirm("PERMANENTLY DELETE THIS VIDEO?")) {
+            // FIXED: Send 'delete_active' which your system is correctly listening for
+            sendCmd('delete_active');
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); sendCmd('vol_up'); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); sendCmd('vol_down'); }
+    });
+
+    let pressTimer;
+    let lockAction = false; 
+
+    function startSaverPress() {
+        lockAction = false;
+        pressTimer = setTimeout(() => {
+            lockAction = true; 
+            sendCmd('open_saver_settings'); 
+        }, 800);
+    }
+
+    function endSaverPress() {
+        clearTimeout(pressTimer); 
+        if (!lockAction) {
+            sendCmd('saver');
+        }
+    }
+    
+    function abortSaverPress() {
+        clearTimeout(pressTimer);
+        lockAction = true; 
+    }
+
+    window.addEventListener('message', (event) => {
+        const msg = event.data;
+        if (!msg || !msg.type) return;
+        if (msg.type === 'UPDATE_LCD') {
+            const mainEl = document.getElementById('lcd-main');
+            const subEl = document.getElementById('lcd-sub');
+            if (mainEl) mainEl.innerText = msg.main || '';
+            if (subEl) subEl.innerText = msg.sub || '';
+        }
+        if (msg.type === 'RENDER_LIST') {
+            if (!msg.pool || !Array.isArray(msg.pool)) return;
+            renderList(msg.pool, msg.activeIdx);
+        }
+    });
+
+    function renderList(pool, activeIdx) {
+        if (!pool || !Array.isArray(pool)) return;
+        const list = document.getElementById('vid-scroller');
+        if (!list) return;
+
+        list.innerHTML = "";
+        pool.forEach((item, i) => {
+            if (!item) return;
+            const isProtected = item.protected === true;
+            const isFav = item.favorite === true;
+
+            const row = document.createElement('div');
+            row.className = "vid-row" + (i === activeIdx ? " active" : "");
+            row.onclick = () => sendCmd('play_idx', i);
+
+            // 1. Favorite bubble (flex child) — ALL items including fish_tank/deep_space
+            const dot = document.createElement('span');
+            dot.className = 'hts-fav-dot ' + (isFav ? 'on' : 'off');
+            dot.title = isFav ? 'Remove favorite' : 'Set as favorite (boots first)';
+            // Inline styles make the dot immune to any external CSS override
+            dot.style.cssText = [
+                'display:block',
+                'width:10px',
+                'height:10px',
+                'min-width:10px',
+                'min-height:10px',
+                'max-width:10px',
+                'max-height:10px',
+                'border-radius:50%',
+                'flex-shrink:0',
+                'cursor:pointer',
+                'transition:box-shadow 0.2s',
+                isFav
+                    ? 'background:#39ff14;box-shadow:0 0 7px #39ff14;border:none'
+                    : 'background:transparent;border:1px solid #555'
+            ].join(';');
+            dot.onclick = (ev) => { ev.stopPropagation(); sendCmd('set_favorite', i); };
+            row.appendChild(dot);
+
+            // 2. Play icon + radio (flex child)
+            const ctrl = document.createElement('div');
+            ctrl.className = 'vid-controls';
+            ctrl.innerHTML = `<div class="icon-play"></div>
+                <div class="radio-out ${i===activeIdx?'selected':''}"><div class="radio-in"></div></div>`;
+            row.appendChild(ctrl);
+
+            // 3. Filename (flex: 1, truncates)
+            const name = document.createElement('div');
+            name.className = 'vid-name';
+            name.title = item.name;
+            name.innerText = item.name;
+            row.appendChild(name);
+
+            // 4. Delete button — only on active non-protected row
+            if (!isProtected && i === activeIdx) {
+                const del = document.createElement('div');
+                del.className = 'vid-del';
+                del.innerText = '[X]';
+                del.onclick = (ev) => deleteVideo(ev);
+                row.appendChild(del);
+            }
+
+            list.appendChild(row);
+        });
+        // Report DOM state back to parent so we can see it in the bridge log
+        const rows = list.querySelectorAll('.vid-row');
+        const dots = list.querySelectorAll('.hts-fav-dot, [style*="border-radius:50"]');
+        window.parent.postMessage({
+            type: 'HTS_CMD',
+            action: 'system_audit',
+            data: 'LIST_RENDERED|rows=' + rows.length + '|dots=' + dots.length + '|first_dot_w=' + (dots[0] ? dots[0].offsetWidth : 'NONE')
+        }, '*');
+    }
+</script>
+</body>
+</html>

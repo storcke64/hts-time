@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - System Changelog</title>
+    <style>
+        :root { 
+            --neon-blue: #00d4ff; 
+            --neon-green: #39ff14; 
+            --neon-gold: #ffd700;
+            --neon-red: #ff3131;
+            --bg-obsidian: #0a0a0a; 
+            --panel-bg: #111111;
+            --border-dim: #222;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+        }
+
+        body { 
+            background-color: var(--bg-obsidian); color: white; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+
+        /* --- UNIFIED NAV (Matched to empty.html) --- */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
+
+        /* --- CONTENT VIEWPORT --- */
+        #content-viewport {
+            width: 100%;
+            height: calc(100vh - 65px); 
+            overflow-y: auto;
+            background: var(--bg-obsidian);
+        }
+
+        .page-content-scroll { padding: 60px 40px; max-width: 1000px; margin: 0 auto; width: 90%; }
+        
+        .neon-h1 { 
+            color: var(--neon-blue); 
+            text-shadow: 0 0 15px var(--neon-blue); 
+            font-size: 3rem; 
+            margin-bottom: 50px; 
+            text-align: center;
+        }
+        
+        .log-entry { margin-bottom: 40px; border-left: 2px solid #222; padding-left: 25px; }
+        .log-ver { color: var(--neon-blue); font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; }
+        .log-date { font-size: 12px; color: #555; margin-bottom: 15px; font-family: monospace; letter-spacing: 1px; }
+        .log-item { margin-bottom: 8px; font-size: 15px; color: #bbb; line-height: 1.4; }
+        
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 2px; font-weight: bold; margin-right: 10px; display: inline-block; }
+        .badge.fix { background: rgba(255, 49, 49, 0.15); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .badge.new { background: rgba(57, 255, 20, 0.15); color: var(--neon-green); border: 1px solid var(--neon-green); }
+    </style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link">CLOCK</a>
+        <a href="converters.html" class="tab-link">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="status.html" class="tab-link">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link active">FEATURES</a>
+        <a href="about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div id="content-viewport">
+        <div class="page-content-scroll">
+            <h1 class="neon-h1">System Changelog</h1>
+
+            <div class="log-entry">
+                <div class="log-ver">VERSION 3.0015 (HTS Media Doctor: Clinical Honesty Update)</div>
+                <div class="log-date">MONDAY FEB 02, 2026 @12:40AM</div>
+                <div class="log-item"><span class="badge fix">FIX</span> lock in and autoplay of favorites.</div>
+                <div class="log-item"><span class="badge new">NEW</span> 30-Second Stall Watchdog: Detects delayed stream freezing.</div>
+                <div class="log-item"><span class="badge new">NEW</span> In-Line Justification: Prints DNA defects on the vital line.</div>
+                <div class="log-item"><span class="badge fix">FIX</span> Renderer Honesty: Stripped false-positives to match ScreenSaver performance.</div>
+                <div class="log-item"><span class="badge new">NEW</span> Tolerance Logic: Orange (!) status for non-optimal but playable DNA.</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-ver">VERSION 3.0011 (HUD)</div>
+                <div class="log-date">SATURDAY JAN 31, 2026 @9:60PM</div>
+                <div class="log-item"><span class="badge fix">FIX</span> This version brings the HUD.</div>
+                <div class="log-item"><span class="badge new">NEW</span> There is some bleed-through from other pages</div>
+            </div>
+
+            <div class="log-entry">
+                <div class="log-ver">VERSION 3.0010 (COORDINATES)</div>
+                <div class="log-date">SUNDAY JAN 18, 2026 @7:45PM</div>
+                <div class="log-item"><span class="badge fix">FIX</span> Media List "Image Map" Simulation (Zero Stretch).</div>
+                <div class="log-item"><span class="badge new">NEW</span> Layout Calibration Tools (CTRL+ALT +/-).</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" || e.key === "Backspace") {
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>

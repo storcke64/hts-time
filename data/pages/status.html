@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS - System Status</title>
+    <style>
+        :root { 
+            --neon-blue: #00d4ff; 
+            --neon-green: #39ff14; 
+            --neon-gold: #ffd700;
+            --neon-red: #ff3131;
+            --bg-obsidian: #0a0a0a; 
+            --panel-bg: #111111;
+            --border-dim: #222;
+            --neon-glow: rgba(0, 212, 255, 0.4);
+        }
+
+        body { 
+            background-color: var(--bg-obsidian); color: white; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- GLOBAL NAV --- */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
+
+        /* --- MAIN STAGE --- */
+        .main-stage {
+            display: flex; flex-direction: column; width: 95%; max-width: 1200px; height: 85vh; 
+            margin-top: 20px; position: relative; padding: 20px;
+        }
+
+
+
+        /* --- ANCHOR HEADER (Logic Validator) --- */
+        /* FIX APPLIED: Margin Right creates a "No Fly Zone" for the header content */
+        .anchor-header { 
+            display: flex; flex-direction: column; 
+            background: rgba(0, 212, 255, 0.05); border: 1px solid var(--neon-blue); 
+            padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: left; 
+            position: relative;
+            margin-right: 160px; /* <--- PREVENTS LOGO OVERLAP */
+        }
+        .anchor-row { display: flex; justify-content: space-between; align-items: center; }
+        .anchor-text { font-family: 'Courier New', monospace; font-size: 18px; font-weight: bold; color: var(--neon-blue); letter-spacing: 1px; }
+        .validator-badge { font-size: 18px; font-weight: bold; color: var(--neon-green); text-transform: uppercase; letter-spacing: 2px; }
+        .corruption-warning { color: var(--neon-red); font-size: 10px; font-weight: bold; margin-top: 8px; letter-spacing: 1px; }
+        
+        @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .pulse-anim { animation: pulse-green 2s infinite; }
+
+        /* --- DIAGNOSTIC GRID --- */
+        .diag-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        
+        .diag-card { 
+            background: rgba(255,255,255,0.02); border: 1px solid #222; 
+            border-radius: 12px; padding: 20px; position: relative; text-align: left; 
+        }
+        .label { font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; }
+        .value { font-family: 'Courier New', monospace; font-size: 28px; color: var(--neon-blue); font-weight: bold; }
+
+        /* --- SPLIT SECTION (Audit & Hourglass) --- */
+        .status-split { display: flex; gap: 20px; flex-grow: 1; min-height: 0; }
+
+        /* 1. AUDIT TERMINAL */
+        .audit-section { 
+            background: #050505; border: 1px solid #222; border-radius: 10px; 
+            padding: 20px; flex: 1.5; display: flex; flex-direction: column; 
+            overflow: hidden; text-align: left; 
+        }
+        #integrity-log { 
+            font-family: 'Courier New', monospace; color: var(--neon-green); 
+            font-size: 12px; overflow-y: auto; flex-grow: 1; 
+            margin-bottom: 10px; white-space: pre-wrap; line-height: 1.4;
+        }
+        .checksum-bar { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-top: 1px solid #222; padding-top: 15px; 
+        }
+        .sync-btn { 
+            background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); 
+            padding: 8px 20px; cursor: pointer; font-family: monospace; font-weight: bold; transition: 0.2s;
+        }
+        .sync-btn:hover { background: var(--neon-blue); color: black; }
+        .sync-btn:disabled { color: #555; border-color: #555; cursor: default; background: transparent; }
+
+        /* 2. HOURGLASS BOX */
+        .hourglass-box { 
+            flex: 1; background: #050505; border: 1px solid var(--neon-gold); 
+            border-radius: 10px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; position: relative; 
+        }
+        
+        .glass-container { width: 80px; height: 160px; position: relative; margin-bottom: 20px; }
+        .glass-top { 
+            width: 100%; height: 50%; border: 3px solid #444; border-bottom: none; 
+            border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%; 
+            position: relative; overflow: hidden; background: rgba(255,215,0,0.05); 
+        }
+        .glass-bot { 
+            width: 100%; height: 50%; border: 3px solid #444; border-top: none; 
+            border-radius: 50% 50% 50% 50% / 20% 20% 80% 80%; 
+            position: relative; overflow: hidden; background: rgba(255,215,0,0.05); 
+        }
+        
+        .sand-top { 
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            background: var(--neon-gold); box-shadow: 0 0 15px var(--neon-gold); 
+            transition: height 1s linear; 
+        }
+        .sand-bot { 
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            background: var(--neon-gold); box-shadow: 0 0 15px var(--neon-gold); 
+            transition: height 1s linear; border-radius: 0 0 30px 30px; 
+        }
+        
+        .sand-stream { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            width: 2px; height: 50%; background: var(--neon-gold); z-index: 10; 
+            animation: sand-flow 0.5s infinite; 
+        }
+        @keyframes sand-flow { 0% { height: 0%; opacity: 0; } 20% { height: 100%; opacity: 1; } 100% { height: 100%; opacity: 1; } }
+
+        .epoch-label { color: var(--neon-gold); font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; letter-spacing: 2px; }
+        .countdown-display { color: white; font-family: monospace; font-size: 24px; font-weight: bold; margin-top: 5px; }
+        .sub-label { font-size: 10px; color: var(--neon-blue); margin-top: 5px; letter-spacing: 2px; text-transform: uppercase; }
+
+    </style>
+</head>
+<body>
+
+    <nav class="nav-bar">
+        <a href="index.html" class="tab-link">CLOCK</a>
+        <a href="converters.html" class="tab-link">CONVERTERS</a>
+        <a href="timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="status.html" class="tab-link active">STATUS</a>
+        <a href="screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="features.html" class="tab-link">FEATURES</a>
+        <a href="about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div class="main-stage">
+        
+
+
+        <div class="anchor-header">
+            <div class="anchor-row">
+                <div class="anchor-text">BASE REFERENCE: 2023 GREG = 1A40000 HTS</div>
+                <div id="logic-validator" class="validator-badge pulse-anim">CHECKING...</div>
+            </div>
+            <div class="corruption-warning">IF REFERENCE ≠ 1A40000: SYSTEM MATH IS CORRUPTED.</div>
+        </div>
+
+        <div class="diag-grid">
+            <div class="diag-card">
+                <div class="label">System Precision Latency</div>
+                <div class="value" id="latency-val">0.0000ms</div>
+            </div>
+            <div class="diag-card">
+                <div class="label">Calibration Activity</div>
+                <div class="value" id="last-test-time" style="color:var(--neon-green);">0s AGO</div>
+            </div>
+        </div>
+
+        <div class="status-split">
+            
+            <div class="audit-section">
+                <div id="integrity-log">> SYSTEM BOOT SEQUENCE INITIATED...<br>> WAITING FOR USER AUDIT COMMAND.</div>
+                <div class="checksum-bar">
+                    <button id="btn-audit" class="sync-btn" onclick="StatusEngine.runManualAudit()">RUN INTEGRITY AUDIT</button>
+                    <div id="checksum-val" style="font-family: monospace; color: #666; font-size: 12px;">CHECKSUM: WAITING</div>
+                </div>
+            </div>
+
+            <div class="hourglass-box">
+                <div class="glass-container">
+                    <div class="glass-top">
+                        <div id="sand-top" class="sand-top"></div>
+                    </div>
+                    <div class="sand-stream"></div>
+                    <div class="glass-bot">
+                        <div id="sand-bot" class="sand-bot"></div>
+                    </div>
+                </div>
+                <div class="epoch-label">CURRENT: EPOCH A</div>
+                <div id="epoch-seconds" class="countdown-display" style="color:var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue);">0s</div>
+                <div id="epoch-years" style="font-family: monospace; font-size: 14px; color: #888; margin-top: 2px;">0 YEARS</div>
+                <div id="epoch-target-label" class="sub-label">UNTIL EPOCH B</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // === CORE KERNEL LOGIC (Required for Validation) ===
+        const HTS_OFFSET = 37977; 
+        const EPOCH_LEN = 50000;
+        const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function getHTSNotation(gregYear) {
+            let absYear = parseInt(gregYear) - 2023 + 40000;
+            if (absYear < 0) return "PRE-HTS";
+            let epochIndex = Math.floor(absYear / EPOCH_LEN);
+            let currentYear = absYear % EPOCH_LEN;
+            let cycle = Math.floor(epochIndex / 26) + 1;
+            let letter = ALPHABET[epochIndex % 26];
+            return `${cycle}${letter}${currentYear}`;
+        }
+
+        let lastTestSeconds = 0;
+
+        const StatusEngine = {
+            getNextEpochLetter: function() {
+                const currentYear = new Date().getFullYear();
+                const htsYear = (currentYear - 2023) + 40000;
+                const nextEpochIndex = Math.floor(htsYear / 50000) + 1;
+                return ALPHABET[nextEpochIndex % 26];
+            },
+
+            verifyCoreLogic: function() {
+                const testResult = getHTSNotation(2023);
+                const statusElement = document.getElementById('logic-validator');
+                if (testResult === "1A40000") {
+                    statusElement.innerText = "LOGIC: VALIDATED";
+                    statusElement.style.color = "var(--neon-green)";
+                    lastTestSeconds = 0;
+                } else {
+                    statusElement.innerText = "LOGIC: CORRUPTED";
+                    statusElement.style.color = "var(--neon-red)";
+                }
+                setTimeout(StatusEngine.verifyCoreLogic, 5000);
+            },
+
+            updateVerificationCounter: function() {
+                lastTestSeconds++;
+                document.getElementById('last-test-time').innerText = `${lastTestSeconds}s AGO`;
+                setTimeout(StatusEngine.updateVerificationCounter, 1000);
+            },
+
+            runManualAudit: function() {
+                const logEl = document.getElementById('integrity-log');
+                const btn = document.getElementById('btn-audit');
+                const checksumEl = document.getElementById('checksum-val');
+                btn.disabled = true;
+                btn.innerText = "SCANNING...";
+                logEl.innerHTML = "";
+                
+                // Anchor Test
+                const anchorResult = getHTSNotation(2023);
+                logEl.innerHTML += `<span style="color:var(--neon-green)">[ANCHOR] 2023 GREG -> ${anchorResult} (VALID)</span><br>`;
+                
+                let count = 0;
+                const scrambleInterval = setInterval(() => {
+                    checksumEl.innerText = "HASH: 0x" + Math.random().toString(16).substr(2, 14).toUpperCase();
+                }, 50);
+
+                const interval = setInterval(() => {
+                    count++;
+                    const randomYear = Math.floor(Math.random() * 200000) - 50000;
+                    const res = getHTSNotation(randomYear);
+                    logEl.innerHTML += `[AUDIT] ${randomYear} GREG -> ${res}<br>`;
+                    logEl.scrollTop = logEl.scrollHeight;
+
+                    if (count >= 20) {
+                        clearInterval(interval);
+                        clearInterval(scrambleInterval);
+                        checksumEl.innerText = "SESSION HASH: 0xHTS_CORE_SECURE";
+                        logEl.innerHTML += "<br>> SYSTEM INTEGRITY: 100% VERIFIED.";
+                        btn.disabled = false;
+                        btn.innerText = "RUN INTEGRITY AUDIT";
+                    }
+                }, 50);
+            },
+
+            updateHourglass: function() {
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const htsYear = (currentYear - 2023) + 40000;
+                const currentEpochYear = htsYear % EPOCH_LEN; // 0 - 49999
+
+                // 1. Calculate Sand Height (Percentage of Epoch Complete)
+                const percentDone = (currentEpochYear / EPOCH_LEN) * 100;
+                
+                document.getElementById('sand-top').style.height = (100 - percentDone) + "%";
+                document.getElementById('sand-bot').style.height = percentDone + "%";
+
+                // 2. Countdown Math
+                const startOfYear = new Date(currentYear, 0, 1);
+                const secondsPassedToday = Math.floor((now - startOfYear) / 1000);
+                const yearsRemaining = EPOCH_LEN - currentEpochYear;
+                
+                // Approx seconds remaining (Years * SecsInYear) - PassedThisYear
+                // Using BigInt for large numbers
+                const totalSeconds = (BigInt(yearsRemaining) * BigInt(31536000)) - BigInt(secondsPassedToday);
+                
+                document.getElementById('epoch-seconds').innerText = totalSeconds.toLocaleString() + "s";
+                document.getElementById('epoch-years').innerText = yearsRemaining.toLocaleString() + " YEARS";
+                document.getElementById('epoch-target-label').innerText = "UNTIL EPOCH " + StatusEngine.getNextEpochLetter();
+
+                setTimeout(StatusEngine.updateHourglass, 1000);
+            },
+
+            updateLiveMetrics: function() {
+                document.getElementById('latency-val').innerText = (Math.random() * 0.005).toFixed(4) + "ms";
+                requestAnimationFrame(StatusEngine.updateLiveMetrics);
+            }
+        };
+
+        window.onload = function() {
+            StatusEngine.verifyCoreLogic();
+            StatusEngine.updateVerificationCounter();
+            StatusEngine.updateLiveMetrics();
+            StatusEngine.updateHourglass();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="court"></canvas>
+
+    <script>
+        const canvas = document.getElementById('court');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        // --- THE PHYSICS ENGINE SETTINGS ---
+        const BALL_COUNT = 12;
+        const GRAVITY = 0.5;
+        const FRICTION = 1.0;  // 1.0 means NO air resistance
+        const BOUNCE = 1.0;    // 1.0 means PERFECT energy return (Perpetual Motion)
+
+        // The Array to hold our dozen balls
+        const balls = [];
+
+        // BALL CLASS (The Blueprint)
+        class Ball {
+            constructor() {
+                this.radius = 30 + Math.random() * 20; // Random sizes
+                this.x = Math.random() * (width - 100) + 50;
+                this.y = Math.random() * (height / 2); // Start in top half
+                
+                // Random Velocity
+                this.vx = (Math.random() - 0.5) * 20; // Random Left/Right
+                this.vy = (Math.random() - 0.5) * 20; // Random Up/Down
+                
+                this.color = '#ff7b00'; // Standard Orange
+            }
+
+            update() {
+                // Apply Gravity
+                this.vy += GRAVITY;
+                
+                // Apply Friction (None in this case)
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+
+                // Move
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // --- COLLISION LOGIC ---
+                
+                // Floor
+                if (this.y + this.radius > height) {
+                    this.y = height - this.radius;
+                    this.vy *= -BOUNCE;
+                }
+                // Ceiling (So they don't fly away forever)
+                else if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy *= -BOUNCE;
+                }
+
+                // Walls
+                if (this.x + this.radius > width) {
+                    this.x = width - this.radius;
+                    this.vx *= -BOUNCE;
+                } else if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx *= -BOUNCE;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // Draw the "Basketball Lines"
+                ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                // Cross pattern
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - this.radius);
+                ctx.lineTo(this.x, this.y + this.radius);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.radius, this.y);
+                ctx.lineTo(this.x + this.radius, this.y);
+                ctx.stroke();
+            }
+        }
+
+        // --- INITIALIZE THE DOZEN ---
+        for(let i = 0; i < BALL_COUNT; i++) {
+            balls.push(new Ball());
+        }
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            // Clear screen
+            ctx.clearRect(0, 0, width, height);
+
+            // Update and Draw every ball
+            for(let i = 0; i < balls.length; i++) {
+                balls[i].update();
+                balls[i].draw();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', function() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

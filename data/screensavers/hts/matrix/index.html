@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* 1. Force the body to be black and disable scrollbars */
+        body { 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: black; 
+        }
+        /* 2. Force the canvas to be a block element */
+        canvas { 
+            display: block; 
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        // VARIABLE SETUP
+        // We use 'let' so we can update these when the screen changes
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        
+        canvas.width = width;
+        canvas.height = height;
+
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789';
+        const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const nums = '0123456789';
+        const alphabet = katakana + latin + nums;
+
+        const fontSize = 16;
+        let columns = width / fontSize; 
+        let drops = [];
+
+        // INITIALIZE DROPS
+        function initDrops() {
+            columns = width / fontSize;
+            drops = [];
+            for(let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+        }
+        initDrops(); // Run once at start
+
+        // --- THE FIX: RESIZE LISTENER ---
+        // This watches the browser window. If it changes, it re-calculates the size.
+        window.addEventListener('resize', function() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initDrops(); // Reset the rain to cover the new area
+        });
+
+        // DRAWING LOOP
+        function draw() {
+            // Semi-transparent black to create the "trail" effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#0F0'; 
+            ctx.font = fontSize + 'px monospace';
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if(drops[i] * fontSize > height && Math.random() > 0.975)
+                    drops[i] = 0;
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(draw, 33);
+    </script>
+</body>
+</html>

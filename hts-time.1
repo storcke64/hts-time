@@ -1,0 +1,66 @@
+.TH HTS-TIME 1 "DECEMBER 2025" "1.2.1" "HTS User Manual"
+.SH NAME
+hts-time \- Human Time System (HTS) Universal Tool
+.SH SYNOPSIS
+.B hts-time
+[\fI--gui\fR]
+.SH DESCRIPTION
+.B hts-time
+is a dual-mode utility for interacting with the Human Time System (HTS).
+By default, the application detects its execution environment to provide the
+most appropriate interface.
+
+HTS is a chronological notation system designed for a 24-billion-year lifespan,
+providing a consistent timeline for human civilization across vast eras.
+
+.SH OPTIONS
+.TP
+.B \-\-gui
+Force the application to launch the Graphical User Interface (GUI), even when
+executed from an interactive terminal session.
+.TP
+.B (No options)
+When executed in a terminal (tty), the program prints the current Gregorian
+time followed by the equivalent HTS notation and exits immediately. When
+executed from a desktop environment or without a tty, it launches the full
+graphical suite.
+
+.SH CLI OUTPUT FORMAT
+The standard terminal output follows this structure:
+.IP
+[Day] [Month] [Date] [Time] [Timezone] [Year] --HTS [HTS-Notation]
+.PP
+Example: Mon Dec 22 11:48:22 PM CST 2025  --HTS 1A-40002
+
+.SH GUI FEATURES
+The graphical interface provides a comprehensive suite of chronological tools:
+.IP \(bu 2
+\fBLive Clock:\fR Real-time synchronization of Gregorian and HTS time.
+.IP \(bu 2
+\fBYear Conversion:\fR Bidirectional conversion between Gregorian AD and HTS.
+.IP \(bu 2
+\fBRelative Lookups:\fR Calculate HTS notations for past or future years.
+.IP \(bu 2
+\fBDuration Span:\fR Calculate the number of years between two dates.
+.IP \(bu 2
+\fBTheme Engine:\fR Five visual modes (Dark, Light, Sepia, Slate, and Neon).
+.IP \(bu 2
+\fBHelp Hub:\fR Integrated utility to facilitate terminal alias setup.
+
+.SH FILES
+.TP
+.I ~/.config/hts_settings.ini
+Stores user preferences including theme selection and display settings.
+.TP
+.I ~/.bash_aliases
+Modified by the Help Hub utility to include the 'hts-time' alias.
+
+.SH AUTHOR
+Inventor: Antonio Storcke (storcke64.github.io)
+
+.SH BUGS
+Report bugs or feature requests at: https://github.com/storcke64/hts-time/issues
+
+.SH SEE ALSO
+.BR date (1),
+.BR timedatectl (1)

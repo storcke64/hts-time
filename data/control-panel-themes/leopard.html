@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS Control Panel - Leopard Protocol</title>
+    <style>
+        :root {
+            --fur-base: #c68c46;
+            --fur-highlight: #eeb462;
+            --spot-outer: #362214;
+            --spot-inner: #63412c;
+            --leopard-gold: #ffcc33;
+            --panel-trim: #4d3319;
+            --screen-bg: #1a140a; 
+            --screen-text: #ffcc33;
+            --neon-red: #ff3131;
+        }
+
+        html, body { 
+            height: 100%; width: 100%; margin: 0; padding: 0; 
+            background: transparent; 
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            display: block; /* FIX: flex+center shrinks body to ~950px, poisoning 100vw in parent */
+            user-select: none;
+        }
+
+        *, *:focus { outline: none; cursor: none; box-sizing: border-box; }
+
+        .config-dashboard {
+            width: fit-content; max-width: 950px;
+            margin: 0 auto;
+            border: 5px solid var(--panel-trim); 
+            border-radius: 12px;
+            display: flex; padding: 20px; gap: 20px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            position: relative;
+            
+            background: 
+                radial-gradient(circle at 20% 30%, var(--spot-inner) 2%, transparent 8%),
+                radial-gradient(circle at 70% 60%, var(--spot-inner) 3%, transparent 10%),
+                radial-gradient(circle at 40% 80%, var(--spot-inner) 2%, transparent 7%),
+                radial-gradient(circle at 22% 32%, var(--spot-outer) 6%, transparent 12%),
+                radial-gradient(circle at 68% 58%, var(--spot-outer) 7%, transparent 15%),
+                radial-gradient(circle at 42% 82%, var(--spot-outer) 5%, transparent 11%),
+                linear-gradient(135deg, var(--fur-base), var(--fur-highlight));
+            background-size: 140px 140px;
+        }
+
+        .config-dashboard::before {
+            content: "";
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('data:image/svg+xml,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.15"/></svg>');
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        .cc-col { display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1; }
+
+        #vid-scroller { 
+            flex: 1; overflow-y: auto; background: rgba(0,0,0,0.85); 
+            border: 2px solid var(--panel-trim); 
+            border-radius: 6px; width: 320px; height: 180px;
+            scrollbar-width: thin; scrollbar-color: var(--leopard-gold) #000;
+        }
+        .vid-row { display: block; position: relative; height: 38px; width: 100%; border-bottom: 1px solid #2a1e12; cursor: pointer; }
+        .vid-row.active { background: rgba(198, 140, 70, 0.2); border-left: 4px solid var(--leopard-gold); }
+        .vid-name { position: absolute; left: 15px; line-height: 38px; font-family: 'Courier New', monospace; font-size: 12px; color: #a67c52; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 80%; }
+        
+        .cc-lcd {
+            background: var(--screen-bg); color: var(--screen-text); 
+            width: 520px; height: 90px; border-radius: 4px; 
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; box-shadow: inset 0 0 30px #000; 
+            border: 3px solid var(--panel-trim);
+        }
+        #lcd-main { font-size: 24px; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px var(--leopard-gold); }
+        #lcd-sub { font-size: 10px; font-family: monospace; color: #8b5a2b; letter-spacing: 4px; margin-top: 8px;}
+
+        .cc-btn { 
+            background: #2a1e12; border: 1px solid var(--leopard-gold); 
+            color: var(--leopard-gold); flex: 1; font-size: 10px; font-weight: bold; cursor: pointer; border-radius: 3px;
+            transition: 0.1s; text-transform: uppercase; padding: 10px;
+        }
+        .cc-btn:hover { background: var(--leopard-gold); color: #000; }
+        .cc-btn.exit { border-color: var(--neon-red); color: var(--neon-red); }
+
+        .cc-sec-strip { display: flex; gap: 8px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="config-dashboard">
+    <div class="cc-col">
+        <div style="font-size: 10px; color: #000; font-weight:bold; text-align: center;">HTS VAULT</div>
+        <div id="vid-scroller"></div>
+        <div class="cc-sec-strip">
+            <button class="cc-btn" onclick="sendCmd('import')">IMPORT</button>
+            <button class="cc-btn" onclick="sendCmd('vol_up')">VOL ▲</button>
+            <button class="cc-btn" onclick="sendCmd('vol_down')">VOL ▼</button>
+        </div>
+    </div>
+
+    <div class="cc-col">
+        <div class="cc-lcd">
+            <div id="lcd-main">SYSTEM READY</div>
+            <div id="lcd-sub">LEOPARD PROTOCOL V2</div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="cc-btn" onclick="sendCmd('fullscreen')">FULL</button>
+            <button class="cc-btn" onclick="sendCmd('prev')">PREV</button>
+            <button class="cc-btn" onclick="sendCmd('toggle')">PLAY/PAUSE</button>
+            <button class="cc-btn" onclick="sendCmd('next')">NEXT</button>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="cc-btn" onmousedown="startSaverPress()" onmouseup="endSaverPress()" onmouseleave="abortSaverPress()">SCREENSAVER</button>
+            <button class="cc-btn" onclick="sendCmd('toggle_settings')">SETTINGS</button>
+            <button class="cc-btn exit" onclick="sendCmd('exit')">EXIT SYSTEM</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function sendCmd(action, payload) { window.parent.postMessage({ type: 'HTS_CMD', action: action, data: payload }, '*'); }
+    
+    // VOLUME KEYBOARD SHORTCUTS
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); sendCmd('vol_up'); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); sendCmd('vol_down'); }
+    });
+
+    let pressTimer;
+    let lockAction = false; 
+    function startSaverPress() { lockAction = false; pressTimer = setTimeout(() => { lockAction = true; sendCmd('open_saver_settings'); }, 800); }
+    function endSaverPress() { clearTimeout(pressTimer); if (!lockAction) sendCmd('saver'); }
+    function abortSaverPress() { clearTimeout(pressTimer); lockAction = true; }
+
+    window.addEventListener('message', (event) => {
+        const msg = event.data;
+        if (msg.type === 'UPDATE_LCD') {
+            document.getElementById('lcd-main').innerText = msg.main;
+            document.getElementById('lcd-sub').innerText = msg.sub;
+        }
+        if (msg.type === 'RENDER_LIST') { if (typeof renderList === 'function') renderList(msg.pool, msg.activeIdx); }
+    });
+
+    function renderList(pool, activeIdx) {
+        const list = document.getElementById('vid-scroller');
+        if (!list || !pool) return;
+        list.innerHTML = "";
+        pool.forEach(function(item, i) {
+            if (!item) return;
+            var isFav = item.favorite === true;
+            var row = document.createElement('div');
+            row.className = "vid-row" + (i === activeIdx ? " active" : "");
+            row.style.cssText = "display:flex;align-items:center;gap:6px;padding:0 6px;box-sizing:border-box;";
+            var dot = document.createElement('span');
+            dot.style.cssText = "display:block;width:10px;height:10px;min-width:10px;border-radius:50%;flex-shrink:0;cursor:pointer;" + (isFav ? "background:#39ff14;box-shadow:0 0 6px #39ff14;" : "background:transparent;border:1px solid #555;");
+            dot.onclick = (function(idx){ return function(ev){ ev.stopPropagation(); sendCmd('set_favorite', idx); }; })(i);
+            var name = document.createElement('div');
+            name.className = "vid-name";
+            name.style.cssText = "flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+            name.innerText = item.name || 'UNKNOWN';
+            row.appendChild(dot);
+            row.appendChild(name);
+            row.onclick = (function(idx){ return function(){ sendCmd('play_idx', idx); }; })(i);
+            list.appendChild(row);
+        });
+    }
+
+</script>
+</body>
+</html>
