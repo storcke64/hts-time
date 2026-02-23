@@ -18,7 +18,7 @@
         }
         .header-label { color: #ffd700; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
         
-     /* PREVIEW UNIT */
+        /* PREVIEW UNIT */
         .preview-container {
             width: 100%; height: 160px; /* Perfectly bounds the scaled 160px iframe */
             background: #000; border: 1px solid #333;
@@ -120,7 +120,6 @@
             </div>
 
             <button id="btn-import-html" class="btn" onclick="triggerImport()">Import HTML Theme</button>
-            <button id="btn-import-face" class="btn" style="border-color:#00d4ff; color:#00d4ff;" onclick="triggerFaceplateImport()">Import Faceplate</button>
             <button id="apply-btn" class="btn btn-apply" onclick="confirmTheme()">Apply Selected</button>
             <button class="btn" style="border-color:#444; color:#555; margin-top:auto;" onclick="window.location.href='screensaver.html'">Exit</button>
             
@@ -130,7 +129,6 @@
         <div class="grid" id="theme-grid" onclick="resetToActive()"></div>
     </div>
 
-    <!-- Context menu for faceplate actions -->
     <div class="context-menu" id="context-menu">
         <div class="context-item" onclick="renameContextItem()">Rename</div>
         <div class="context-item danger" onclick="deleteContextItem()">Delete</div>
@@ -145,7 +143,6 @@
             "FACEPLATE": "🖼️", "WIDE": "📟", "GREEN": "📟"
         };
         
-        // --- UPDATED REGISTRY WITH EXACT FILENAMES ---
         let standardThemes = [
             { name: "VHS APPLIANCE", file: "theme_vhs.html", icon: "📼", type: "html" },
             { name: "WIDE GREEN", file: "theme_wide_green.html", icon: "📟", type: "html" },
@@ -157,8 +154,23 @@
             { name: "UNICORN", file: "theme_unicorn.html", icon: "🦄", type: "html" }
         ];
 
+        // --- PERSISTENT GALLERIES ---
         let externalThemes = [];
         let faceplateThemes = [];
+        
+        try {
+            const savedFaceplates = localStorage.getItem('hts_faceplate_gallery');
+            if (savedFaceplates) faceplateThemes = JSON.parse(savedFaceplates);
+            
+            const savedExternals = localStorage.getItem('hts_external_themes');
+            if (savedExternals) externalThemes = JSON.parse(savedExternals);
+        } catch(e) { console.warn("Gallery load failed", e); }
+        
+        function saveGalleries() {
+            localStorage.setItem('hts_faceplate_gallery', JSON.stringify(faceplateThemes));
+            localStorage.setItem('hts_external_themes', JSON.stringify(externalThemes));
+        }
+
         let pendingTheme = null;
         let revertTimer = null;
         let injectionInterval = null;
@@ -179,7 +191,6 @@
             } else {
                 console.log("Using browser file picker.");
                 document.getElementById('fallback-picker').click();
-                // Button text will be reset after file selection
             }
         }
         
@@ -216,6 +227,7 @@
             };
             
             externalThemes.push(newTheme);
+            saveGalleries();
             renderGrid();
             
             // Auto-preview the newly imported theme
@@ -232,15 +244,6 @@
             // Reset file input for potential re-import
             e.target.value = '';
         });
-
-        function triggerFaceplateImport() {
-            const btn = document.getElementById('btn-import-face');
-            btn.innerText = "OPENING...";
-            if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
-                window.webkit.messageHandlers.hts_browser_sync.postMessage("open_plate_selector");
-                setTimeout(() => { btn.innerText = "IMPORT FACEPLATE"; }, 2000);
-            }
-        }
 
         function previewTheme(theme, isAuto = false) {
             clearTimeout(revertTimer);
@@ -309,12 +312,25 @@
                 style.textContent = `
                     html, body { 
                         display: flex !important;
+                        flex-direction: column !important;
                         align-items: center !important; 
                         justify-content: center !important; 
                         height: 100vh !important; 
                         margin: 0 !important;
                         overflow: hidden !important;
                         background: transparent !important;
+                    }
+                    /* Pull absolute-positioned themes to the center */
+                    body > * {
+                        position: relative !important;
+                        bottom: auto !important;
+                        top: auto !important;
+                        margin: 0 auto !important;
+                    }
+                    /* ERADICATE GHOST PLAYLISTS IN PREVIEW */
+                    #vid-scroller, #pl-container, .playlist-container {
+                        display: none !important;
+                        opacity: 0 !important;
                     }
                 `;
                 frame.contentDocument.head.appendChild(style);
@@ -331,7 +347,17 @@
             const currentFaceplate = localStorage.getItem('hts_faceplate_path');
             
             if (currentFaceplate) {
-                const match = faceplateThemes.find(t => t.path === currentFaceplate);
+                let match = faceplateThemes.find(t => t.path === currentFaceplate);
+                
+                // CRITICAL FIX: If the faceplate was imported directly from the dashboard, 
+                // the browser won't know it yet. We synthesize it here so it doesn't crash!
+                if (!match) {
+                    const name = currentFaceplate.split('/').pop().replace(/\.[^.]+$/, '').toUpperCase();
+                    match = { name: name, path: currentFaceplate, type: 'image' };
+                    faceplateThemes.push(match);
+                    saveGalleries();
+                }
+                
                 if (match) previewTheme(match, true);
             } else {
                 const currentPref = localStorage.getItem('hts_theme_preference') || (THEME_ROOT + "theme_original.html");
@@ -340,7 +366,9 @@
                 if (!match) match = standardThemes.find(t => t.file === "theme_original.html");
                 if (match) previewTheme(match, true);
             }
+            
             updateActiveDisplay();
+            renderGrid(); // GUARANTEE THE GRID ALWAYS RENDERS
         }
 
         function confirmTheme() {
@@ -386,14 +414,6 @@
                 document.getElementById('active-file').innerText = filename;
             }
         }
-
-        window.receiveFaceplateList = function(list) {
-            try {
-                faceplateThemes = list.map(item => ({ name: item.name.toUpperCase(), path: item.path, type: 'image' }));
-                renderGrid();
-                if (!pendingTheme) resetToActive(); 
-            } catch(e) { console.error("Faceplate Error", e); }
-        };
 
         function startLongPress(e, theme, card) {
             longPressTarget = { theme, card, x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY };
@@ -448,11 +468,12 @@
                 if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
                     const cmd = `rename_faceplate|${theme.path}|${newName.trim()}`;
                     window.webkit.messageHandlers.hts_browser_sync.postMessage(cmd);
-                    
-                    // Update local state
-                    theme.name = newName.trim().toUpperCase();
-                    renderGrid();
                 }
+                
+                // Update local state
+                theme.name = newName.trim().toUpperCase();
+                saveGalleries();
+                renderGrid();
             }
             hideContextMenu();
         }
@@ -466,19 +487,20 @@
                 if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
                     const cmd = `delete_faceplate|${theme.path}`;
                     window.webkit.messageHandlers.hts_browser_sync.postMessage(cmd);
+                }
+                
+                // Remove from local state
+                const index = faceplateThemes.findIndex(t => t.path === theme.path);
+                if (index > -1) {
+                    faceplateThemes.splice(index, 1);
+                    saveGalleries();
+                    renderGrid();
                     
-                    // Remove from local state
-                    const index = faceplateThemes.findIndex(t => t.path === theme.path);
-                    if (index > -1) {
-                        faceplateThemes.splice(index, 1);
-                        renderGrid();
-                        
-                        // If deleted faceplate was active, reset to default
-                        const currentFaceplate = localStorage.getItem('hts_faceplate_path');
-                        if (currentFaceplate === theme.path) {
-                            localStorage.removeItem('hts_faceplate_path');
-                            resetToActive();
-                        }
+                    // If deleted faceplate was active, reset to default
+                    const currentFaceplate = localStorage.getItem('hts_faceplate_path');
+                    if (currentFaceplate === theme.path) {
+                        localStorage.removeItem('hts_faceplate_path');
+                        resetToActive();
                     }
                 }
             }
@@ -537,17 +559,9 @@
                 isExternal: true
             };
             externalThemes.push(newTheme);
+            saveGalleries();
             renderGrid();
             previewTheme(newTheme);
-        };
-
-        /* Called by C chooser after user picks a faceplate image */
-        window.receiveSelectedFaceplate = function(fileUri) {
-            const name = fileUri.split('/').pop().replace(/\.[^.]+$/, '').toUpperCase();
-            const newFaceplate = { name: name, path: fileUri, type: 'image' };
-            faceplateThemes.push(newFaceplate);
-            renderGrid();
-            previewTheme(newFaceplate);
         };
 
         window.onload = () => {

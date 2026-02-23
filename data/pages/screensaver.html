@@ -2265,7 +2265,7 @@
                             case 'stop': { if(this.player) { this.player.pause(); this.player.currentTime = 0; } break; }
                             case 'delete': this.deleteVideo(this.activeIdx); break;
                             case 'open_saver_settings': sendOverlaySignal('open_saver_settings'); break;
-                            case 'import_faceplate': sendOverlaySignal('import_faceplate'); break;
+                            case 'open_plate_selector': sendOverlaySignal('open_plate_selector'); break;
                             case 'import_absolute': {
                                 const streamUrl = e.data.data; 
                                 const fileName = e.data.name;
@@ -2667,6 +2667,36 @@
         setTimeout(() => { location.reload(); }, 150);
     }
 });
+    // --- NATIVE FACEPLATE RECEIVER & GALLERY MANAGER ---
+    window.receiveSelectedFaceplate = function(fileUri) {
+        console.log("🖼️ Faceplate Received:", fileUri);
+        
+        // 1. Send the image down into the Faceplate theme iframe
+        const frame = document.getElementById('furniture-frame');
+        if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({ type: 'SET_FACEPLATE', path: fileUri }, '*');
+        }
+        
+        // 2. Save it globally to memory
+        localStorage.setItem('hts_active_faceplate', fileUri);
+        localStorage.setItem('hts_faceplate_path', fileUri);
+        localStorage.setItem('hts_theme_preference', 'file:///app/bin/data/control-panel-themes/theme_faceplate.html');
+        
+        // 3. PERSISTENT GALLERY: Save it to the universal array so the Theme Browser remembers it!
+        let gallery = [];
+        try { gallery = JSON.parse(localStorage.getItem('hts_faceplate_gallery') || '[]'); } catch(e){}
+        const name = fileUri.split('/').pop().replace(/\.[^.]+$/, '').toUpperCase();
+        
+        if (!gallery.find(f => f.path === fileUri)) {
+            gallery.push({ name: name, path: fileUri, type: 'image' });
+            localStorage.setItem('hts_faceplate_gallery', JSON.stringify(gallery));
+        }
+        
+        // 4. Save it to the C-Backend so it automatically boots next time
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
+            window.webkit.messageHandlers.hts_browser_sync.postMessage("save_theme|FACEPLATE|" + fileUri);
+        }
+    };
     </script>
 </body>
 </html>
