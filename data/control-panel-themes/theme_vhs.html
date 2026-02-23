@@ -22,7 +22,17 @@
             background: transparent;
             font-family: 'Consolas', 'Monaco', monospace;
             overflow: hidden;
-            display: block; /* FIX: flex+center shrinks body, poisoning 100vw in parent */
+        }
+
+        /* --- THE NEW SPATIAL WRAPPER --- */
+        /* Reserves height for the C-Backend auto-anchor so the flap can push upwards */
+        .vcr-wrapper {
+            width: 100vw;
+            height: 220px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Anchors VCR to the bottom */
+            align-items: center;       /* Centers VCR horizontally */
         }
 
         /* --- THE APPLIANCE CHASSIS --- */
@@ -37,15 +47,15 @@
             display: flex; flex-direction: column;
             position: relative;
             border-radius: 4px 4px 0 0;
-            transition: all 0.3s ease;
-            margin: auto auto 0 auto; /* bottom-anchor within block body */
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Feet */
+        /* RESPONSIVE FEET: Replaces hardcoded 840px shadow to fix previewer glitch */
         .vcr-unit::after {
             content: ''; position: absolute; bottom: -5px; left: 20px; right: 20px;
             height: 5px; background: transparent;
-            box-shadow: 0 5px 0 #111, 840px 5px 0 #111;
+            border-left: 20px solid #111;
+            border-right: 20px solid #111;
             pointer-events: none;
         }
 
@@ -206,60 +216,61 @@
 </head>
 <body>
 
-    <div class="vcr-unit">
-        
-        <div class="deck-face">
+    <div class="vcr-wrapper">
+        <div class="vcr-unit">
             
-            <div class="brand-panel">
-                <div class="logo">HTS-9000</div>
-                <div class="vhs-badge">VHS</div>
-                <div class="power-btn on" title="System Power" onclick="sendCmd('exit')">
-                    <div class="power-led"></div>
+            <div class="deck-face">
+                
+                <div class="brand-panel">
+                    <div class="logo">HTS-9000</div>
+                    <div class="vhs-badge">VHS</div>
+                    <div class="power-btn on" title="System Power" onclick="sendCmd('exit')">
+                        <div class="power-led"></div>
+                    </div>
+                </div>
+
+                <div class="vfd-window">
+                    <div class="lcd-text main-status" id="lcd-main">STANDBY</div>
+                    <div class="lcd-text sub-status" id="lcd-sub">NO TAPE INSERTED</div>
+                    <div class="led-indicator-row" id="playlist-dots"></div>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="transport-btn" onclick="sendCmd('prev')" title="Prev">|&#9664;</div>
+                    <div class="transport-btn" onclick="sendCmd('rewind')" title="Rewind">&#9664;&#9664;</div>
+                    
+                    <div class="transport-btn" onclick="sendCmd('stop')" title="Stop">
+                        <div style="width:8px; height:8px; background:#aaa;"></div>
+                    </div>
+
+                    <div class="transport-btn btn-play" onclick="sendCmd('toggle')" title="Play/Pause">&#9654;</div>
+                    <div class="transport-btn" onclick="sendCmd('fast_forward')" title="Fwd">&#9654;&#9654;</div>
+                    <div class="transport-btn" onclick="sendCmd('next')" title="Next">&#9654;|</div>
+                    
+                    <div class="transport-btn btn-eject" onclick="sendCmd('import')" title="Eject/Load">EJECT</div>
+                    
+                    <div class="transport-btn btn-utility" onclick="sendCmd('toggle_settings')" title="Settings">
+                        <div style="font-size:10px;">⚙</div>
+                    </div>
+                    <div class="transport-btn btn-utility" onclick="sendCmd('doctor')" title="Doctor">
+                        <div style="font-size:10px;">🩺</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="vfd-window">
-                <div class="lcd-text main-status" id="lcd-main">STANDBY</div>
-                <div class="lcd-text sub-status" id="lcd-sub">NO TAPE INSERTED</div>
-                <div class="led-indicator-row" id="playlist-dots"></div>
+            <div class="door-latch" onclick="toggleDoor()" title="Open Programming Bay"></div>
+            
+            <div class="hidden-compartment" id="prog-bay">
+                <div class="prog-label">Programming Bay</div>
+                <div class="svc-btn" onclick="sendCmd('doctor')">DOCTOR</div>
+                <div class="svc-btn" onclick="sendCmd('manual')">TRACKING</div>
+                <div class="svc-btn" onclick="sendCmd('toggle_settings')">MENU</div>
+                <div class="svc-btn danger" onclick="sendCmd('exit')">OFF</div>
             </div>
 
-            <div class="controls-panel">
-                <div class="transport-btn" onclick="sendCmd('prev')" title="Prev">|&#9664;</div>
-                <div class="transport-btn" onclick="sendCmd('rewind')" title="Rewind">&#9664;&#9664;</div>
-                
-                <div class="transport-btn" onclick="sendCmd('stop')" title="Stop">
-                    <div style="width:8px; height:8px; background:#aaa;"></div>
-                </div>
+            <div id="vid-scroller"></div>
 
-                <div class="transport-btn btn-play" onclick="sendCmd('toggle')" title="Play/Pause">&#9654;</div>
-                <div class="transport-btn" onclick="sendCmd('fast_forward')" title="Fwd">&#9654;&#9654;</div>
-                <div class="transport-btn" onclick="sendCmd('next')" title="Next">&#9654;|</div>
-                
-                <div class="transport-btn btn-eject" onclick="sendCmd('import')" title="Eject/Load">EJECT</div>
-                
-                <!-- New utility buttons -->
-                <div class="transport-btn btn-utility" onclick="sendCmd('toggle_settings')" title="Settings">
-                    <div style="font-size:10px;">⚙</div>
-                </div>
-                <div class="transport-btn btn-utility" onclick="sendCmd('doctor')" title="Doctor">
-                    <div style="font-size:10px;">🩺</div>
-                </div>
-            </div>
         </div>
-
-        <div class="door-latch" onclick="toggleDoor()" title="Open Programming Bay"></div>
-        
-        <div class="hidden-compartment" id="prog-bay">
-            <div class="prog-label">Programming Bay</div>
-            <div class="svc-btn" onclick="sendCmd('doctor')">DOCTOR</div>
-            <div class="svc-btn" onclick="sendCmd('manual')">TRACKING</div>
-            <div class="svc-btn" onclick="sendCmd('toggle_settings')">MENU</div>
-            <div class="svc-btn danger" onclick="sendCmd('exit')">OFF</div>
-        </div>
-
-        <div id="vid-scroller"></div>
-
     </div>
 
     <script>

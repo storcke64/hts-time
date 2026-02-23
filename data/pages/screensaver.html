@@ -834,12 +834,13 @@
 </head>
 <body oncontextmenu="return false;">
 
-    <nav class="nav-bar" id="main-nav" style="position:relative;">
+   <nav class="nav-bar" id="main-nav" style="position:relative;">
         <a href="index.html" class="tab-link">CLOCK</a>
         <a href="converters.html" class="tab-link">CONVERTERS</a>
         <a href="timezones.html" class="tab-link">TIMEZONES</a>
         <a href="status.html" class="tab-link">STATUS</a>
         <div class="tab-link active">SCREENSAVER</div>
+        <a href="features.html" class="tab-link">FEATURES</a>        
         <a href="about.html" class="tab-link">ABOUT</a>
         <div id="hts-nav-clock" style="position:absolute; right:160px; top:50%; transform:translateY(-50%); color:var(--neon-blue); font-family:monospace; font-size:13px; font-weight:bold; letter-spacing:1px; pointer-events:none;"></div>
     </nav>
@@ -1753,12 +1754,9 @@
                 }
                 
                 this.apply(); 
+			}
                 
-            } else {
-                // NORMAL MODE: VOL +/-
-                if (e.key === 'ArrowUp') { e.preventDefault(); VideoModule.adjustVolume(0.1); }
-                if (e.key === 'ArrowDown') { e.preventDefault(); VideoModule.adjustVolume(-0.1); }
-            }
+        
         },
 
         forceInput: function(key, shift) {
@@ -2625,27 +2623,48 @@
             };
         }
     };
-    window.addEventListener('keydown', function(e) {
+   // --- GLOBAL MEDIA HOTKEYS & SYSTEM CONTROLS ---
+	window.addEventListener('keydown', function(e) {
+    // 1. PREVENT HOTKEYS IF TYPING IN A TEXT FIELD (Like the PIN box)
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    // 2. SPACEBAR: Toggle Play/Pause (ONLY in Fullscreen Cinema Mode, NOT screensaver)
+    if (e.code === 'Space') {
+        if (window.CinemaModule && CinemaModule.active && window.LockModule && !LockModule.isLocked) {
+            e.preventDefault();
+            if (window.VideoModule && VideoModule.player) {
+                if (VideoModule.player.paused) VideoModule.player.play();
+                else VideoModule.player.pause();
+            }
+        }
+    }
+
+    // 3. ARROWS: Global Volume (Works in screensaver, cinema, and standard modes)
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        // Do not adjust volume if Calibration Mode is actively using the arrows to move the UI
+        if (window.CalibrationEngine && CalibrationEngine.active) return;
+        
+        e.preventDefault();
+        if (window.VideoModule) {
+            VideoModule.adjustVolume(e.key === 'ArrowUp' ? 0.1 : -0.1);
+        }
+    }
+
+    // 4. ESCAPE: Close Vault
     if (e.key === "Escape") {
         const vault = document.getElementById('hud-vault');
         if (vault && vault.style.display === 'flex') { VaultBrowser.toggle(); return; }
     }
+    
+    // 5. F5: Emergency Theme Reset
     if (e.key === "F5") {
         e.preventDefault();
         console.log("🛠️ HTS SYSTEM RECOVERY: Resetting to Replacement Control Panel...");
-        
-        // 1. Wipe the Browser's memory of the current theme
         localStorage.removeItem('hts_theme_preference');
-        
-        // 2. Wipe the C-Backend's memory (active_theme.conf)
         if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
             window.webkit.messageHandlers.hts_browser_sync.postMessage("save_theme|");
         }
-        
-        // 3. Forced reload to trigger window.onload fallback
-        setTimeout(() => {
-            location.reload();
-        }, 150);
+        setTimeout(() => { location.reload(); }, 150);
     }
 });
     </script>
