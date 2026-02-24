@@ -129,10 +129,7 @@
         <div class="grid" id="theme-grid" onclick="resetToActive()"></div>
     </div>
 
-    <div class="context-menu" id="context-menu">
-        <div class="context-item" onclick="renameContextItem()">Rename</div>
-        <div class="context-item danger" onclick="deleteContextItem()">Delete</div>
-    </div>
+    <div class="context-menu" id="context-menu"></div>
 
     <script>
         const THEME_ROOT = "file:///app/bin/data/control-panel-themes/";
@@ -415,6 +412,7 @@
             }
         }
 
+        // --- LONG PRESS & CONTEXT MENU ---
         function startLongPress(e, theme, card) {
             longPressTarget = { theme, card, x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY };
             longPressTimer = setTimeout(() => {
@@ -438,6 +436,20 @@
         
         function showContextMenu(x, y) {
             const menu = document.getElementById('context-menu');
+            menu.innerHTML = ""; // Clear existing options
+
+            // Setup menu based on what was long-pressed
+            if (longPressTarget.theme.type === 'image') {
+                menu.innerHTML = `
+                    <div class="context-item" onclick="renameContextItem()">Rename</div>
+                    <div class="context-item danger" onclick="deleteContextItem()">Delete</div>
+                `;
+            } else if (longPressTarget.theme.name === "FACEPLATE ARMOR") {
+                menu.innerHTML = `
+                    <div class="context-item danger" onclick="resetFaceplateArmor()">Reset to Default Black</div>
+                `;
+            }
+
             menu.style.left = x + 'px';
             menu.style.top = y + 'px';
             menu.classList.add('show');
@@ -455,6 +467,25 @@
                 longPressTarget.card.style.borderColor = '';
                 longPressTarget.card.style.transform = '';
             }
+        }
+        
+        // Faceplate Armor specific reset
+        function resetFaceplateArmor() {
+            if (!longPressTarget) return;
+            if (confirm("Reset the Faceplate Armor theme back to default solid black?")) {
+                localStorage.removeItem('hts_active_faceplate');
+                localStorage.removeItem('hts_faceplate_path');
+                
+                // Clear the preview iframe background instantly if it's currently showing
+                const frame = document.getElementById('preview-frame');
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage({ type: 'SET_FACEPLATE', path: '' }, '*');
+                }
+                
+                // Switch focus back to the Faceplate Armor card so they see it worked
+                previewTheme(standardThemes.find(t => t.name === "FACEPLATE ARMOR"));
+            }
+            hideContextMenu();
         }
         
         function renameContextItem() {
@@ -523,8 +554,8 @@
                 if (isSystemActive) card.classList.add('system-active');
                 card.onclick = (e) => { e.stopPropagation(); previewTheme(t); };
                 
-                // Long-press support for faceplates only
-                if (t.type === 'image') {
+                // --- ENABLE LONG PRESS FOR IMAGES *AND* FACEPLATE ARMOR ---
+                if (t.type === 'image' || t.name === "FACEPLATE ARMOR") {
                     card.onmousedown = (e) => startLongPress(e, t, card);
                     card.onmouseup = () => cancelLongPress();
                     card.onmouseleave = () => cancelLongPress();
