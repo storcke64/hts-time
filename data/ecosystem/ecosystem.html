@@ -18,7 +18,6 @@
             overflow: hidden;
         }
 
-        /* --- THEME COLOR: NEON PURPLE --- */
         :root { --accent: #bd00ff; }
 
         .container {
@@ -36,7 +35,6 @@
             overflow-y: auto;
         }
 
-        /* SCROLLBAR HIDING */
         .container::-webkit-scrollbar { width: 5px; }
         .container::-webkit-scrollbar-thumb { background: var(--accent); }
         .container::-webkit-scrollbar-track { background: #111; }
@@ -84,7 +82,6 @@
             color: #aaa;
         }
 
-        /* --- TERMINAL VISUALIZATION --- */
         .terminal-window {
             background: #0f0f0f;
             border: 1px solid #444;
@@ -129,7 +126,6 @@
             vertical-align: middle;
         }
 
-        /* --- PLACEHOLDER BOXES FOR IMAGES --- */
         .media-placeholder {
             width: 100%;
             height: 180px;
@@ -155,7 +151,6 @@
 
         .media-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
 
-        /* --- GAMING BADGE --- */
         .game-badge {
             background: rgba(189, 0, 255, 0.1);
             border: 1px solid var(--accent);
@@ -166,7 +161,6 @@
         }
         .game-title { font-family: 'Courier New', monospace; font-weight: bold; font-size: 20px; color: white; text-shadow: 0 0 10px var(--accent); letter-spacing: 2px; margin-bottom: 5px; }
 
-        /* --- BOOK SECTION --- */
         .book-section {
             border-top: 1px solid #333;
             padding-top: 20px;
@@ -189,10 +183,66 @@
             font-size: 10px;
             font-family: monospace;
             text-align: center;
-            padding: 10px;
+            padding: 0;
+            border-radius: 4px;
+            cursor: zoom-in;
+            overflow: hidden;
+            position: relative;
+            transition: 0.3s ease;
         }
 
-        /* --- DONATION SECTION --- */
+        .book-cover-slot:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(189, 0, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .book-cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- MODAL LIGHTBOX --- */
+        .modal-backdrop {
+            display: none; 
+            position: fixed; 
+            z-index: 9999; 
+            left: 0; 
+            top: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background-color: rgba(0, 0, 0, 0.92); 
+            align-items: center; 
+            justify-content: center;
+            cursor: zoom-out;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            max-width: 90vw; 
+            max-height: 90vh; 
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 50px rgba(189, 0, 255, 0.2);
+            border-radius: 4px;
+            object-fit: contain;
+            cursor: default;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 25px;
+            right: 40px;
+            color: #666;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .close-modal-btn:hover { color: var(--accent); }
+
         .donation-section {
             border-top: 1px solid #333;
             padding-top: 20px;
@@ -312,107 +362,154 @@
         }
 
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* --- UNIFIED NAV (Linked via ../pages/) --- */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-glow); }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>ECOSYSTEM</h1>
-        <span class="subtitle">INTEGRATION // LITERATURE // ENTERTAINMENT</span>
-
-        <div class="section-grid">
-            <div class="info-block">
-                <h3>System Level Integration</h3>
-                <p>
-                    HTS operates as a robust system add-on, serving as a 
-                    <b>drop-in replacement</b> for the standard Linux Date command.
-                </p>
-                <p>
-                    Administrators utilize the <b>hts-time</b> command to query the core logic directly, 
-                    bypassing local timezone conversion for raw Epoch data.
-                </p>
-                
-                <div class="terminal-window">
-                    <div class="term-header">
-                        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-                    </div>
-                    <div class="term-body">
-                        <div><span class="path">user@linux:~/s</span> $ <span class="cmd">hts-time</span></div>
-                        <div class="output">
-                            > BASE REFERENCE: 2023 AD<br>
-                            > EPOCH DELTA: +3 YRS<br>
-                            > HTS OUTPUT: <span class="highlight">1A40003</span>
-                        </div>
-                        <br>
-                        <div><span class="path">user@linux:~/s</span> $ <span class="cmd">hts-time --sync</span></div>
-                        <div class="output">> LATENCY: 0.0004ms [OK]</div>
-                        <div><span class="path">user@linux:~/s</span> $ <span class="cursor"></span></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="info-block">
-                <h3>Gaming & Simulation</h3>
-                
-                <div class="media-placeholder">
-                    <div class="media-icon">🎮</div>
-                    [ EPOCH26 GAME ART ]<br>1920x1080
-                </div>
-
-                <p>
-                    <b>HTS solves time.</b> Our flagship title, <b>Epoch26</b>, utilizes the system to manage complex resource growth and interstellar travel times with pure integer math, completely eliminating calendar bugs.
-                </p>
-
-                <div class="game-badge">
-                    <div class="game-title">EPOCH26</div>
-                    <div style="font-family: monospace; font-weight: bold; color: var(--accent); font-size: 10px;">POWERED BY HTS CORE</div>
-                    <div style="font-size: 9px; color: #888; margin-top: 5px;">STATUS: IN DEVELOPMENT</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="book-section">
-            <div class="book-cover-slot">
-                [ BOOK COVER ]<br>THE UNSEEN CLOCK
-            </div>
-            <div class="info-block" style="flex: 1;">
-                <h3>Essential Reading</h3>
-                <p style="margin-top: 5px; color: white; font-weight: bold; font-size: 16px;">The Unseen Clock</p>
-                <p style="margin-top: 0; font-size: 12px; color: var(--accent);">BY ANTONIO STORCKE</p>
-                <p>
-                    The foundational text that started it all. Storcke explores the philosophical and mathematical limitations of the Gregorian calendar and proposes the architecture for a time system designed to outlast human civilization itself. A must-read for understanding the "why" behind the code.
-                </p>
-            </div>
-        </div>
-
-        <div class="donation-section">
-            <div class="donation-header">Support the Project</div>
-            <div class="donation-grid">
-                <div class="crypto-card">
-                    <div class="qr-slot">[ BITCOIN QR ]</div>
-                    <div class="coin-name">BITCOIN (BTC)</div>
-                    <div class="wallet-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div>
-                </div>
-                
-                <div class="crypto-card">
-                    <div class="qr-slot">[ STELLAR QR ]</div>
-                    <div class="coin-name">USDC (STELLAR)</div>
-                    <div class="wallet-address">GB56OQO34KNV2Z5F5CHW37V6Q21...</div>
-                </div>
-            </div>
-            
-            <div class="future-note">
-                Funds contributed to these wallets are mathematically locked and preserved for the future establishers of the 
-                <b>Human Time System Foundation</b>. These assets will become accessible and usable by the Foundation 
-                at the beginning of <b>Epoch B</b> (approx. 50,000 years from now). 
-                <br><br>
-                The cryptographic mechanisms ensuring this multi-millennial asset transfer are detailed in 
-                <i>The Unseen Clock</i>.
-            </div>
-        </div>
-
-        <a href="../../index.html?tab=about" class="back-btn"><< RETURN TO ABOUT V2</a>
+    <div id="image-modal" class="modal-backdrop" onclick="closeModal()">
+        <span class="close-modal-btn" onclick="closeModal()">&times;</span>
+        <img id="enlarged-img" class="modal-content" src="BOOK-COVER.png" alt="The Unseen Clock - Full Cover" onclick="event.stopPropagation();">
     </div>
 
+    <nav class="nav-bar">
+        <a href="../pages/index.html" class="tab-link">CLOCK</a>
+        <a href="../pages/converters.html" class="tab-link">CONVERTERS</a>
+        <a href="../pages/timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="../pages/status.html" class="tab-link">STATUS</a>
+        <a href="../pages/screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="../pages/features.html" class="tab-link">FEATURES</a>
+        <a href="../pages/about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div id="content-viewport">
+        <div class="page-content-scroll">
+            <h1 class="neon-h1">System Features</h1>
+
+            <div class="section-grid">
+                <div class="info-block">
+                    <h3>System Level Integration</h3>
+                    <p>
+                        HTS operates as a robust system add-on, serving as a 
+                        <b>drop-in replacement</b> for the standard Linux Date command.
+                    </p>
+                    <p>
+                        Administrators utilize the <b>hts-time</b> command to query the core logic directly, 
+                        bypassing local timezone conversion for raw Epoch data.
+                    </p>
+                    
+                    <div class="terminal-window">
+                        <div class="term-header">
+                            <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                        </div>
+                        <div class="term-body">
+                            <div><span class="path">user@linux:~/s</span> $ <span class="cmd">hts-time</span></div>
+                            <div class="output">
+                                > BASE REFERENCE: 2023 AD<br>
+                                > EPOCH DELTA: +3 YRS<br>
+                                > HTS OUTPUT: <span class="highlight">1A40003</span>
+                            </div>
+                            <br>
+                            <div><span class="path">user@linux:~/s</span> $ <span class="cmd">hts-time --sync</span></div>
+                            <div class="output">> LATENCY: 0.0004ms [OK]</div>
+                            <div><span class="path">user@linux:~/s</span> $ <span class="cursor"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-block">
+                    <h3>Gaming & Simulation</h3>
+                    
+                    <div class="media-placeholder">
+                        <div class="media-icon">🎮</div>
+                        [ EPOCH26 GAME ART ]<br>1920x1080
+                    </div>
+
+                    <p>
+                        <b>HTS solves time.</b> Our flagship title, <b>Epoch26</b>, utilizes the system to manage complex resource growth and interstellar travel times with pure integer math, completely eliminating calendar bugs.
+                    </p>
+
+                    <div class="game-badge">
+                        <div class="game-title">EPOCH26</div>
+                        <div style="font-family: monospace; font-weight: bold; color: var(--accent); font-size: 10px;">POWERED BY HTS CORE</div>
+                        <div style="font-size: 9px; color: #888; margin-top: 5px;">STATUS: IN DEVELOPMENT</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="book-section">
+                <div class="book-cover-slot" onclick="openModal()" title="Click to enlarge">
+                    <img src="BOOK-COVER.png" alt="The Unseen Clock Cover Thumbnail" class="book-cover-img" onerror="this.outerHTML='<div style=\'padding:10px;\'>[ MISSING IMAGE ]<br>BOOK-COVER.png</div>'">
+                </div>
+                <div class="info-block" style="flex: 1;">
+                    <h3>Essential Reading</h3>
+                    <p style="margin-top: 5px; color: white; font-weight: bold; font-size: 16px;">The Unseen Clock</p>
+                    <p style="margin-top: 0; font-size: 12px; color: var(--accent);">BY ANTONIO STORCKE</p>
+                    <p>
+                        The foundational text that started it all. Storcke explores the philosophical and mathematical limitations of the Gregorian calendar and proposes the architecture for a time system designed to outlast human civilization itself. A must-read for understanding the "why" behind the code.
+                    </p>
+                </div>
+            </div>
+
+            <div class="donation-section">
+                <div class="donation-header">Support the Project</div>
+                <div class="donation-grid">
+                    <div class="crypto-card">
+                        <div class="qr-slot">[ BITCOIN QR ]</div>
+                        <div class="coin-name">BITCOIN (BTC)</div>
+                        <div class="wallet-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div>
+                    </div>
+                    
+                    <div class="crypto-card">
+                        <div class="qr-slot">[ STELLAR QR ]</div>
+                        <div class="coin-name">USDC (STELLAR)</div>
+                        <div class="wallet-address">GB56OQO34KNV2Z5F5CHW37V6Q21...</div>
+                    </div>
+                </div>
+                
+                <div class="future-note">
+                    Funds contributed to these wallets are mathematically locked and preserved for the future establishers of the 
+                    <b>Human Time System Foundation</b>. These assets will become accessible and usable by the Foundation 
+                    at the beginning of <b>Epoch B</b> (approx. 50,000 years from now). 
+                    <br><br>
+                    The cryptographic mechanisms ensuring this multi-millennial asset transfer are detailed in 
+                    <i>The Unseen Clock</i>.
+                </div>
+            </div>
+
+            <a href="../pages/about.html" class="back-btn"><< RETURN TO ABOUT</a>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById("image-modal");
+
+        function openModal() {
+            modal.style.display = "flex";
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        // Allow closing the modal with the Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && modal.style.display === "flex") {
+                closeModal();
+            }
+        });
+    </script>
 </body>
 </html>
