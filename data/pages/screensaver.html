@@ -1,12 +1,4 @@
 <!DOCTYPE html>
-<!-- HTS_VERSION: screensaver.html v1.00013 — 2026-02-21
-     v1.00013: file:// URLs pass through savePool and handleVideoSelect unchanged
-     v1.00012: Progress bar always in vault card; persistent overlay
-     v1.00010: vault_scan polling removed; Escape closes vault
-     v1.00001: savePool strips ephemeral port
-     v1.00000: VaultBrowser.toggle pauses video + overlay_hide/show; toggleMenu overlay signals;
-               global img wildcard removed; vault-logo unconstrained; video pause on HUD open
--->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -123,6 +115,7 @@
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
+            pointer-events: none; /* Let the container catch the clicks */
         }
 
         /* --- RAPID SCROLLER & TOOLTIP --- */
@@ -806,7 +799,7 @@
 
         iframe { 
             width: 100vw !important; 
-            max-width: 100vw !important;
+            max-width: 100vw !important; 
             height: 100%; 
             border: none; 
             pointer-events: auto;
@@ -838,8 +831,9 @@
         <div class="imp-name" id="imp-name">preparing...</div>
         <div class="imp-track"><div class="imp-fill" id="imp-fill"></div><span class="imp-pct" id="imp-pct">0%</span></div>
     </div>
+    
     <div id="viewscreen-hero">
-        <video id="hts-main-video" autoplay loop muted playsinline preload="auto"></video>
+        <video id="hts-main-video" autoplay loop playsinline preload="auto"></video>
         <input type="range" id="hero-seeker" min="0" max="100" value="0" step="0.1">
         <div id="seeker-tooltip">00:00</div>
     </div>
@@ -892,14 +886,14 @@
                 </div>
                 <div class="grid-sec">
                     <div class="sec-title">SYSTEM & AUDIO</div>
-                    <button type="button" class="btn-action" id="btn-volume" onclick="VideoModule.toggleVolume()">VOLUME: ...</button>
-                    <button type="button" class="btn-action" id="btn-blackout" onclick="VideoModule.toggleBlackout()">BACKDROP: BLUR</button>
-                    <button type="button" class="btn-action" id="btn-exit-toggle" onclick="VideoModule.toggleExitBtn()">CINEMA EXIT BTN: VISIBLE</button>
+                    <button type="button" class="btn-action" id="btn-volume" onclick="if(VideoModule) VideoModule.toggleVolume()">VOLUME: ...</button>
+                    <button type="button" class="btn-action" id="btn-blackout" onclick="if(VideoModule) VideoModule.toggleBlackout()">BACKDROP: BLUR</button>
+                    <button type="button" class="btn-action" id="btn-exit-toggle" onclick="if(VideoModule) VideoModule.toggleExitBtn()">CINEMA EXIT BTN: VISIBLE</button>
                     <button type="button" class="btn-action" onclick="window.location.reload()">RESTART MODULE</button>
                     <button type="button" class="btn-action" style="border-color: #ff3131; color: #ff3131;" onclick="if(confirm('CLEAR MEDIA POOL? You will need to re-import your videos.')) { localStorage.removeItem('hts_media_pool'); localStorage.removeItem('hts_active_idx'); location.reload(); }">RESET POOL</button>
                 </div>
             </div>
-            <div class="btn-close" onclick="VideoModule.toggleMenu(false)">[ CLOSE MENU ]</div>
+            <div class="btn-close" onclick="if(VideoModule) VideoModule.toggleMenu(false)">[ CLOSE MENU ]</div>
         </div>
     </div>
 
@@ -915,8 +909,8 @@
                 <div class="grid-sec">
                     <div class="sec-title">CERTIFICATION SCORE</div>
                     <div id="insp-score" class="inspector-score">--</div>
-                    <button class="btn-action" onclick="ThemeInspector.injectLogic()">RE-INJECT LOGIC DNA</button>
-                    <button class="btn-action" style="margin-top:10px" onclick="ThemeInspector.fixStructure()">ATTEMPT AUTO-REPAIR</button>
+                    <button class="btn-action" onclick="if(ThemeInspector) ThemeInspector.injectLogic()">RE-INJECT LOGIC DNA</button>
+                    <button class="btn-action" style="margin-top:10px" onclick="if(ThemeInspector) ThemeInspector.fixStructure()">ATTEMPT AUTO-REPAIR</button>
                 </div>
             </div>
             <div class="btn-close" onclick="document.getElementById('hud-inspector').style.display='none'">[ CLOSE INSPECTOR ]</div>
@@ -933,6 +927,7 @@
                         <strong>VOL +/-:</strong> Adjust System Audio<br>
                         <strong>ARROWS:</strong> Remote Volume Control<br>
                         <strong>REW/FF:</strong> Seek -10s / +10s<br>
+                        <strong>SPACE:</strong> Play / Pause<br>
                         <strong>DOUBLE CLICK:</strong> Toggle Fullscreen
                     </p>
                 </div>
@@ -995,12 +990,13 @@
                 </div>
             </div>
             
-            <div class="btn-close" onclick="VaultBrowser.toggle()">[ CLOSE VAULT ]</div>
+            <div class="btn-close" onclick="if(VaultBrowser) VaultBrowser.toggle()">[ CLOSE VAULT ]</div>
         </div>
     </div>
 
     <div class="cp-layer-container" id="dash-panel">
-        <iframe id="furniture-frame" src=""></iframe> </div>
+        <iframe id="furniture-frame" src=""></iframe> 
+    </div>
 
     <script>
     function sendOverlaySignal(command) {
@@ -1009,9 +1005,8 @@
         }
     }
 
-    // --- GLOBAL: Active Theme ID for Calibration ---
     let activeThemeID = "default";
-    let lockedThemeHeight = 300; // Stores the detected perfect height
+    let lockedThemeHeight = 300; 
 
     // --- THEME INSPECTOR MODULE ---
     const ThemeInspector = {
@@ -1021,7 +1016,7 @@
             if (isOpen) {
                 hud.style.display = 'none';
             } else {
-                VideoModule.toggleMenu(false);
+                if(window.VideoModule) window.VideoModule.toggleMenu(false);
                 hud.style.display = 'flex';
                 this.scan();
             }
@@ -1030,8 +1025,7 @@
         scan: function() {
             const frame = document.getElementById('furniture-frame');
             if (!frame || !frame.contentDocument) return;
-            const doc = frame.contentDocument;
-
+            
             const checks = [
                 { id: 'vid-scroller', name: 'Playlist Container' },
                 { id: 'lcd-main', name: 'LCD Display (Main)' },
@@ -1043,7 +1037,7 @@
             let html = "";
 
             checks.forEach(check => {
-                const el = check.id ? doc.getElementById(check.id) : doc.querySelector(check.selector);
+                const el = check.id ? frame.contentDocument.getElementById(check.id) : frame.contentDocument.querySelector(check.selector);
                 const status = el ? "DETECTED" : "MISSING";
                 const cls = el ? "good" : (check.optional ? "good" : "bad"); 
                 
@@ -1065,7 +1059,7 @@
 
         injectLogic: function() {
             const frame = document.getElementById('furniture-frame');
-            if (frame) injectSystemProtocol(frame);
+            if (frame && window.injectSystemProtocol) window.injectSystemProtocol(frame);
             alert("Logic DNA Re-Injected into Theme.");
             this.scan();
         },
@@ -1085,18 +1079,18 @@
             if (isOpen) {
                 hud.style.display = 'none';
                 if (this.scanInterval) clearInterval(this.scanInterval);
-                if (VideoModule.player && VideoModule.player._pausedByVault) {
-                    VideoModule.player._pausedByVault = false;
-                    VideoModule.player.play().catch(() => {});
+                if (window.VideoModule && window.VideoModule.player && window.VideoModule.player._pausedByVault) {
+                    window.VideoModule.player._pausedByVault = false;
+                    window.VideoModule.player.play().catch(() => {});
                 }
                 sendOverlaySignal('overlay_show');
             } else {
-                VideoModule.toggleMenu(false);
+                if(window.VideoModule) window.VideoModule.toggleMenu(false);
                 hud.style.display = 'flex';
                 this.scan();
-                if (VideoModule.player && !VideoModule.player.paused) {
-                    VideoModule.player._pausedByVault = true;
-                    VideoModule.player.pause();
+                if (window.VideoModule && window.VideoModule.player && !window.VideoModule.player.paused) {
+                    window.VideoModule.player._pausedByVault = true;
+                    window.VideoModule.player.pause();
                 }
                 sendOverlaySignal('overlay_hide');
             }
@@ -1108,10 +1102,10 @@
         },
         
         buildVaultFromMediaPool: function() {
-            if (!VideoModule || !VideoModule.mediaPool) return [];
+            if (!window.VideoModule || !window.VideoModule.mediaPool) return [];
             const importing = window._currentImport || null;
 
-            return VideoModule.mediaPool.filter(v => {
+            return window.VideoModule.mediaPool.filter(v => {
                 return !v.protected && (v.url.startsWith('file://') || v.url.startsWith('http://127.0.0.1:'));
             }).map(v => {
                 let filename;
@@ -1121,9 +1115,7 @@
                     const url = new URL(v.url);
                     filename = decodeURIComponent(url.pathname.substring(1));
                 }
-                filename = filename;
                 
-                // Format file size
                 let sizeStr = 'Unknown';
                 if (v.size && v.size > 0) {
                     const sizeMB = v.size / (1024 * 1024);
@@ -1134,7 +1126,6 @@
                     }
                 }
                 
-                // Get hash (short form for display)
                 const hash = v.hash || 'unknown';
                 const hashShort = hash.substring(0, 16) + '...';
                 
@@ -1150,8 +1141,7 @@
                     hash: hash,
                     hashShort: hashShort,
                     verified: v.verified || false,
-                    eta: null,
-                    progress: 100
+                    eta: null
                 };
             });
         },
@@ -1162,14 +1152,12 @@
             const completeCount = vault.filter(v => v.status === 'complete').length;
             const importingCount = vault.filter(v => v.status === 'importing').length;
             
-            // Calculate total vault size
             const totalBytes = vault.reduce((sum, v) => sum + (v.sizeBytes || 0), 0);
             const totalMB = totalBytes / (1024 * 1024);
             const totalSizeStr = totalMB >= 1024 
                 ? (totalMB / 1024).toFixed(2) + ' GB' 
                 : totalMB.toFixed(2) + ' MB';
             
-            // Update stats
             document.getElementById('vault-total-count').innerText = totalCount;
             document.getElementById('vault-complete-count').innerText = completeCount;
             document.getElementById('vault-importing-count').innerText = importingCount;
@@ -1214,7 +1202,6 @@
                     `;
                 }
                 
-                // Escape special characters for onclick attributes
                 const escapedUrl = item.url.replace(/'/g, "\\'");
                 const escapedFilename = item.filename.replace(/'/g, "\\'");
                 
@@ -1245,18 +1232,17 @@
                         <button class="vault-btn danger" onclick="VaultBrowser.deleteFile('${escapedFilename}')">DELETE</button>
                     </div>
                 `;
-                
                 grid.appendChild(card);
             });
         },
         
         play: function(url) {
-            if (VideoModule && VideoModule.mediaPool) {
+            if (window.VideoModule && window.VideoModule.mediaPool) {
                 const targetPath = url.replace(/^https?:\/\/[^/]+/, '');
-                const idx = VideoModule.mediaPool.findIndex(v =>
+                const idx = window.VideoModule.mediaPool.findIndex(v =>
                     v.url === url || v.url.replace(/^https?:\/\/[^/]+/, '') === targetPath
                 );
-                if (idx >= 0) { VideoModule.handleVideoSelect(idx); this.toggle(); }
+                if (idx >= 0) { window.VideoModule.handleVideoSelect(idx); this.toggle(); }
             }
         },
         
@@ -1276,193 +1262,102 @@
         
         deleteFile: function(filename) {
             if (confirm(`Delete ${filename} from vault?\n\nThis action cannot be undone.`)) {
-                // Find by filename in mediaPool and delegate to VideoModule.deleteVideo
-                // which handles pool removal, file deletion, UI refresh, and playback stop
-                const idx = VideoModule.mediaPool.findIndex(v => {
-                    const vName = v.url.startsWith('http://') 
-                        ? decodeURIComponent(v.url.split('/').pop())
-                        : v.url.split('/').pop();
-                    return vName === filename || v.name === filename;
-                });
-                if (idx !== -1) {
-                    VideoModule.deleteVideo(idx);
-                    setTimeout(() => this.scan(), 300);
-                } else {
-                    console.warn('VaultBrowser: file not found in mediaPool:', filename);
+                if(window.VideoModule) {
+                    const idx = window.VideoModule.mediaPool.findIndex(v => {
+                        const vName = v.url.startsWith('http://') 
+                            ? decodeURIComponent(v.url.split('/').pop())
+                            : v.url.split('/').pop();
+                        return vName === filename || v.name === filename;
+                    });
+                    if (idx !== -1) {
+                        window.VideoModule.deleteVideo(idx);
+                        setTimeout(() => this.scan(), 300);
+                    }
                 }
             }
         }
     };
 
     // --- UNIVERSAL DNA INJECTION ENGINE (GOD CREATOR MODE) ---
-    // WATCHDOG: Tracks if control panel responded after injection
     let _injectionWatchdog = null;
     let _controlPanelAlive = false;
 
     function injectSystemProtocol(frame) {
         if (!frame) return;
-        
         _controlPanelAlive = false;
         
-        // Clear any previous watchdog
         if (_injectionWatchdog) clearTimeout(_injectionWatchdog);
-        
-        // Set watchdog - if panel doesn't respond in 3 seconds, log the freeze
         _injectionWatchdog = setTimeout(() => {
             if (!_controlPanelAlive) {
                 sendOverlaySignal("system_audit|CONTROL_PANEL_FREEZE_DETECTED");
-                console.error("🚨🚨🚨 CONTROL PANEL FREEZE DETECTED 🚨🚨🚨");
-                console.error("🚨 Theme loaded and injection completed but panel is unresponsive!");
-                console.error("🚨 Theme URL: " + (frame.contentWindow?.location?.href || 'unknown'));
-                console.error("🚨 Possible cause: TypeError inside theme JS crashed the message handler");
             }
         }, 3000);
         
         sendOverlaySignal("system_audit|INJECTION_ATTEMPTED_ON_" + (frame.id || "UNKNOWN_FRAME"));
 
         const deployDNA = () => {
-            if (!frame.contentDocument) {
-                sendOverlaySignal("system_audit|INJECTION_FAILED_NO_DOCUMENT");
-                return;
-            }
-            
+            if (!frame.contentDocument) return;
             const existingScript = frame.contentDocument.getElementById('hts-dna-implant');
             if (existingScript) existingScript.remove(); 
 
             try {
-                // 1. INJECT STYLE PROTECTION (DIMENSION ENFORCEMENT & TEXT TRUNCATION)
                 const style = frame.contentDocument.createElement('style');
                 style.textContent = `
-                    /* IRONCLAD DOM CONTAINMENT */
-                    html, body { 
-                        width: 100vw !important; 
-                        max-width: 100vw !important; 
-                        overflow: hidden !important; 
-                        margin: 0 !important; 
-                        padding: 0 !important; 
-                        background: transparent !important; 
-                        display: flex !important; 
-                        flex-direction: column !important; 
-                        justify-content: flex-start !important; 
-                        align-items: center !important; 
-                    }
-                    /* SURGICAL TARGETING FOR FILENAMES ONLY */
-                    #lcd-main, .main-text, .vid-name, .track-title, h1, h2, h3 {
-                        white-space: nowrap !important;
-                        overflow: hidden !important;
-                        text-overflow: ellipsis !important;
-                        max-width: 100% !important;
-                        display: block !important;
-                    }
-                    
-                    /* TAME FLEXBOX CHILDREN — but exempt the favorite dot */
+                    html, body { width: 100vw !important; max-width: 100vw !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; background: transparent !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; align-items: center !important; }
+                    #lcd-main, .main-text, .vid-name, .track-title, h1, h2, h3 { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; max-width: 100% !important; display: block !important; }
                     *:not(.hts-fav-dot) { min-width: 0 !important; flex-shrink: 1 !important; }
                     .hts-fav-dot { min-width: 10px !important; width: 10px !important; height: 10px !important; flex-shrink: 0 !important; }
-
-                    /* CURSOR ENFORCEMENT: never let theme CSS hide the pointer */
                     *, *::before, *::after { cursor: default !important; }
-                    /* FAVORITE BUBBLE — used by theme list renderers */
-                    .hts-fav-dot {
-                        display: inline-block; width: 10px; height: 10px;
-                        border-radius: 50%; flex-shrink: 0; margin-right: 8px;
-                        vertical-align: middle; cursor: pointer !important;
-                    }
+                    .hts-fav-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-right: 8px; vertical-align: middle; cursor: pointer !important; }
                     .hts-fav-dot.on  { background: #39ff14; box-shadow: 0 0 6px #39ff14; }
                     .hts-fav-dot.off { background: transparent; border: 1px solid #444; }
-                    button, [onclick], .cc-btn, .hard-btn, .lcars-btn, .candy-btn,
-                    .function-key, .magic-btn, .transport-btn, .phys-btn, .svc-btn,
-                    .vid-row, .cart-item, .manifest-item, .scroll-item, .sp-item,
-                    a, [role="button"] { cursor: pointer !important; }
+                    button, [onclick], .cc-btn, .hard-btn, .lcars-btn, .candy-btn, .function-key, .magic-btn, .transport-btn, .phys-btn, .svc-btn, .vid-row, .cart-item, .manifest-item, .scroll-item, .sp-item, a, [role="button"] { cursor: pointer !important; }
                     .vid-del { cursor: pointer !important; z-index: 9999 !important; }
                     #lock-overlay, .lock-screen, .pin-pad, #security-panel, [id*="lock"], [class*="lock-box"] { display: none !important; }
-
-                    /* KILL any nav bar that sneaks into the theme iframe */
                     .nav-bar, nav, header, #main-nav { display: none !important; }
                 `;
                 frame.contentDocument.head.appendChild(style);
 
-                // 2. INJECT BRAIN SCRIPT
                 const script = frame.contentDocument.createElement('script');
                 script.id = 'hts-dna-implant';
                 script.textContent = `
                     try {
-                        console.log("[HTS GOD MODE] System Protocol Injected");
-
-                        window.sendCmd = function(action, data) {
-                            window.parent.postMessage({ type: 'HTS_CMD', action: action, data: data }, '*');
-                        };
-                        console.log("[HTS] Step 1: sendCmd defined OK");
-
-                        window.deleteVideo = function(e) {
-                            e.stopPropagation();
-                            if(confirm("PERMANENTLY DELETE THIS VIDEO?")) {
-                                window.sendCmd('delete_active');
-                            }
-                        };
-                        console.log("[HTS] Step 2: deleteVideo defined OK");
-
-                        window.expandList = function() {
-                            window.sendCmd('expand_list');
-                        };
-                        console.log("[HTS] Step 2.5: expandList defined OK");
+                        window.sendCmd = function(action, data) { window.parent.postMessage({ type: 'HTS_CMD', action: action, data: data }, '*'); };
+                        window.deleteVideo = function(e) { e.stopPropagation(); if(confirm("PERMANENTLY DELETE THIS VIDEO?")) window.sendCmd('delete_active'); };
+                        window.expandList = function() { window.sendCmd('expand_list'); };
 
                         window.addEventListener('keydown', function(e) {
                             if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) { window.parent.postMessage({ type: 'HTS_CMD', action: 'calibration_toggle' }, '*'); } 
-                            else if (['ArrowUp', 'ArrowDown', 'Enter'].includes(e.key)) { window.parent.postMessage({ type: 'HTS_CMD', action: 'calibration_input', key: e.key, shift: e.shiftKey }, '*'); }
+                            else if (['ArrowUp', 'ArrowDown', 'Enter'].includes(e.key)) { window.parent.postMessage({ type: 'HTS_CMD', action: 'calibration_input', key: e.key, shift: e.shiftKey }, '*'); } 
+                            else if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); window.parent.postMessage({ type: 'HTS_CMD', action: 'toggle' }, '*'); } 
                             else { window.parent.postMessage({ type: 'HTS_CMD', action: 'wake_up' }, '*'); }
                         });
-                        console.log("[HTS] Step 3: keydown listener OK");
                         
                         window.addEventListener('click', function(e) { window.parent.postMessage({ type: 'HTS_CMD', action: 'wake_up' }, '*'); });
-                        console.log("[HTS] Step 4: click listener OK");
 
                         window.addEventListener('message', function(e) {
                             const msg = e.data;
                             if (!msg || !msg.type) return;
                             if (msg.type === 'SET_FACEPLATE') { document.body.style.backgroundImage = 'url("' + msg.path + '")'; document.body.style.backgroundSize = 'cover'; document.body.style.backgroundPosition = 'center'; }
                             if (msg.type === 'UPDATE_LCD') { const main = document.getElementById('lcd-main') || document.querySelector('.main-text'); if(main) main.innerText = msg.main; }
-                            if (msg.type === 'RENDER_LIST') {
-                                // Delegate to the theme's own renderList if it exists
-                                // — the theme handles its own list rendering with full dot support
-                                if (typeof window.renderList === 'function') {
-                                    window.renderList(msg.pool, msg.activeIdx);
-                                }
-                            }
+                            if (msg.type === 'RENDER_LIST') { if (typeof window.renderList === 'function') window.renderList(msg.pool, msg.activeIdx); }
                         });
-                        console.log("[HTS] Step 5: message listener OK");
 
                         window.sendCmd('system_audit', 'GOD_MODE_WIRED_SUCCESSFULLY');
-                        console.log("[HTS] Step 6: sendCmd handshake OK");
-                        
                         window.parent.postMessage({ type: 'HTS_PANEL_ALIVE' }, '*');
-                        console.log("[HTS] Step 7: HTS_PANEL_ALIVE sent OK");
-
-                    } catch(err) {
-                        console.error("[HTS] 🚨 INJECTED SCRIPT CRASHED AT: " + err.message);
-                        console.error("[HTS] 🚨 Stack: " + err.stack);
-                        window.parent.postMessage({ type: 'HTS_PANEL_ALIVE' }, '*'); // Still clear watchdog
-                    }
+                    } catch(err) { window.parent.postMessage({ type: 'HTS_PANEL_ALIVE' }, '*'); }
                 `;
                 frame.contentDocument.body.appendChild(script);
                 
-                // 3. Injection complete — immediately send the playlist
-                // The message listener is now live; don't wait for the heartbeat
                 sendOverlaySignal("system_audit|INJECTION_COMPLETE_FOR_" + frame.id);
                 setTimeout(() => {
-                    if (window.VideoModule && VideoModule.mediaPool) {
-                        frame.contentWindow.postMessage({
-                            type: "RENDER_LIST",
-                            pool: VideoModule.mediaPool,
-                            activeIdx: VideoModule.activeIdx
-                        }, "*");
+                    if (window.VideoModule && window.VideoModule.mediaPool) {
+                        frame.contentWindow.postMessage({ type: "RENDER_LIST", pool: window.VideoModule.mediaPool, activeIdx: window.VideoModule.activeIdx }, "*");
                     }
                 }, 100);
 
-            } catch(e) { 
-                sendOverlaySignal("system_audit|INJECTION_CRASHED_ERROR_" + e.message);
-            }
+            } catch(e) {}
         };
-
         deployDNA();
     }
 
@@ -1474,70 +1369,44 @@
             if (this.active) return;
             this.active = true;
             document.body.classList.add('fullscreen-mode');
-            console.log("🎬 Cinema Mode ENGAGED");
             sendOverlaySignal("overlay_hide");
             if (localStorage.getItem('hts_cinema_exit') === 'false') {
-                sendOverlaySignal("set_exit_btn|0"); // Hide exit button ONLY if user prefers it hidden in fullscreen
+                sendOverlaySignal("set_exit_btn|0"); 
             }
             document.getElementById('main-nav').style.transform = 'translateY(-100px)';
             document.getElementById('dash-panel').style.height = '0px';
             document.getElementById('viewscreen-hero').style.bottom = '0px';
             document.getElementById('viewscreen-hero').style.top = '0px';
             
-            // REMOVED: Browser fullscreen - causes rapid toggle in WebKit
-            
-            // ESC key to exit - must bind 'this' context
             this.boundKeyHandler = ((module) => {
                 return (e) => {
                     if(e.key === 'Escape') {
-                        console.log("🎬 ESC pressed - exiting cinema mode");
                         module.exit();
                     }
                 };
             })(this);
             window.addEventListener('keydown', this.boundKeyHandler);
-            
-            console.log("🎬 Cinema Mode FULLY ENGAGED (listeners attached)");
         },
         exit: function() {
-            if (!this.active) {
-                console.log("🎬 Cinema Mode exit ignored (already inactive)");
-                return;
-            }
-            console.log("🎬 Cinema Mode EXITING...");
-            console.log("🎬 EXIT CALLED FROM:", new Error().stack);
+            if (!this.active) return;
             this.active = false;
             document.body.classList.remove('fullscreen-mode');
-			console.log("🎬 Cinema Mode EXITED");
             sendOverlaySignal("overlay_show");
-            sendOverlaySignal("set_exit_btn|1"); // Always restore exit button when leaving fullscreen
+            sendOverlaySignal("set_exit_btn|1"); 
             document.getElementById('main-nav').style.transform = 'translateY(0)';
-            CalibrationEngine.apply(); 
+            if(window.CalibrationEngine) window.CalibrationEngine.apply(); 
             document.getElementById('viewscreen-hero').style.top = '65px';
-            
-            // REMOVED: Browser fullscreen exit
             
             if (this.boundKeyHandler) {
                 window.removeEventListener('keydown', this.boundKeyHandler);
                 this.boundKeyHandler = null;
             }
         },
-
         toggle: function() {
-            // Debounce rapid clicks
-            if (this._toggling) {
-                console.log("🎬 Cinema Mode toggle ignored (debounce active)");
-                return;
-            }
+            if (this._toggling) return;
             this._toggling = true;
-            setTimeout(() => { this._toggling = false; }, 1000); // Increased to 1 second
-            
-            console.log("🎬 Cinema Mode toggle called, active=" + this.active);
-            if (this.active) {
-                this.exit(); 
-            } else {
-                this.engage();
-            }
+            setTimeout(() => { this._toggling = false; }, 1000); 
+            if (this.active) this.exit(); else this.engage();
         }
     };
 
@@ -1568,7 +1437,7 @@
             if (e.type === 'keydown' || e.type === 'click') this.showPrompt();
         },
         engage: function() {
-            if (CinemaModule.active) CinemaModule.exit();
+            if (window.CinemaModule && window.CinemaModule.active) window.CinemaModule.exit();
             this.isLocked = true;
             sendOverlaySignal("overlay_hide");
             document.getElementById('main-nav').style.transform = 'translateY(-100px)';
@@ -1578,21 +1447,17 @@
             document.title = "HTS - IMMERSIVE";
             document.getElementById('interaction-layer').style.display = 'block';
             
-            // Load HTML screensaver if selected
             const savedScreensaver = localStorage.getItem('hts_active_screensaver');
             const htmlFrame = document.getElementById('html-saver-frame');
             const videoPlayer = document.getElementById('hts-main-video');
             
-           if (savedScreensaver && savedScreensaver !== 'VIDEO') {
-                // HTML Screensaver Mode - convert hts:// to http://
-                const httpUrl = VideoModule.htsToHttp(savedScreensaver);
-                console.log("Loading HTML screensaver:", httpUrl);
+           if (savedScreensaver && savedScreensaver !== 'VIDEO' && window.VideoModule) {
+                const httpUrl = window.VideoModule.htsToHttp(savedScreensaver);
                 htmlFrame.src = httpUrl;
                 htmlFrame.style.display = 'block';
-                htmlFrame.style.opacity = '1'; // FIX: Make screensaver visible
-                videoPlayer.style.display = 'block'; // KEEP ALIVE
+                htmlFrame.style.opacity = '1'; 
+                videoPlayer.style.display = 'block'; 
             } else {
-                // Video Mode
                 htmlFrame.style.display = 'none';
                 videoPlayer.style.display = 'block';
             }
@@ -1650,13 +1515,12 @@
             const viewer = document.getElementById('html-saver-frame');
             viewer.style.display = 'none';
             viewer.src = ""; 
-            // Restore video player visibility
             const videoPlayer = document.getElementById('hts-main-video');
             const controls = document.getElementById('hero-seeker');
             if(videoPlayer) videoPlayer.style.display = 'block';
             if(controls) controls.style.display = 'block';
             document.getElementById('main-nav').style.transform = 'translateY(0)';
-            CalibrationEngine.apply(); 
+            if(window.CalibrationEngine) window.CalibrationEngine.apply(); 
             document.getElementById('viewscreen-hero').style.top = '65px';
             document.title = "HTS - SCREENSAVER";
         }
@@ -1666,10 +1530,9 @@
     const CalibrationEngine = {
         active: false, 
         baseHeight: 300, 
-        userOffset: 0, // Now represents BOTTOM MARGIN adjustment
+        userOffset: 0, 
 
         init: function() {
-            // Wait for theme load to apply saved profile
             window.addEventListener('keydown', (e) => this.handleInput(e));
         },
 
@@ -1685,33 +1548,22 @@
         saveProfile: function() {
             const safeId = activeThemeID.replace(/[^a-zA-Z0-9]/g, "_");
             localStorage.setItem('hts_offset_' + safeId, this.userOffset);
-            console.log("💾 Offset Protocol Saved: " + this.userOffset + "px");
         },
 
         apply: function() {
-            if (CinemaModule.active || LockModule.isLocked) return;
-            
+            if ((window.CinemaModule && window.CinemaModule.active) || (window.LockModule && window.LockModule.isLocked)) return;
             const furniture = document.querySelector('.cp-layer-container');
             const wall = document.getElementById('viewscreen-hero');
 
-            if (!furniture) return; // Guard: container not ready yet
-
-            // 1. LOCK HEIGHT (No stretching)
+            if (!furniture) return;
             if(lockedThemeHeight > 0) furniture.style.height = lockedThemeHeight + 'px';
-            
-            // 2. ADJUST POSITION (Translation)
             furniture.style.bottom = this.userOffset + 'px';
-            
-            // 3. ADJUST WALL (Prevents overlap)
             if(wall) wall.style.bottom = (lockedThemeHeight + this.userOffset) + 'px';
-            
-            console.log(`📏 Calibrated: Height=${lockedThemeHeight}px | Bottom=${this.userOffset}px`);
         },
 
         handleInput: function(e) {
-            if (LockModule.isLocked) return;
+            if (window.LockModule && window.LockModule.isLocked) return;
 
-            // TOGGLE CALIBRATION
             if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
                 this.toggle(); 
                 e.preventDefault();
@@ -1722,11 +1574,9 @@
                 e.preventDefault(); 
                 let step = e.shiftKey ? 10 : 1; 
 
-                // --- TRANSLATION LOGIC ---
-                if (e.key === 'ArrowUp') this.userOffset += step; // LIFT
-                if (e.key === 'ArrowDown') this.userOffset -= step; // LOWER
+                if (e.key === 'ArrowUp') this.userOffset += step; 
+                if (e.key === 'ArrowDown') this.userOffset -= step; 
                 
-                // VISUAL GOLD SNAP (Anchored at Bottom 0)
                 const overlayText = document.getElementById('calibration-text');
                 
                 if (Math.abs(this.userOffset) < 2) {
@@ -1737,22 +1587,20 @@
                     overlayText.style.color = "#39ff14";
                 }
 
-                if (e.key === 'Enter') {
-                    this.toggle();
-                }
-                
+                if (e.key === 'Enter') this.toggle();
                 this.apply(); 
-			}
-                
-        
+            } else {
+                // ARROWS IN IFRAME ROUTE TO VOLUME HERE IF CALIBRATION IS OFF
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    if (window.VideoModule) {
+                        window.VideoModule.adjustVolume(e.key === 'ArrowUp' ? 0.1 : -0.1);
+                    }
+                }
+            }
         },
 
         forceInput: function(key, shift) {
-            const fakeEvent = { 
-                key: key, 
-                shiftKey: shift, 
-                preventDefault: () => {} 
-            };
+            const fakeEvent = { key: key, shiftKey: shift, preventDefault: () => {} };
             this.handleInput(fakeEvent);
         },
 
@@ -1811,10 +1659,8 @@
         activeIdx: 0,
         mediaPool: [],
         
-        // Convert hts:// to http://
         htsToHttp: function(url) {
             if (!url || !url.startsWith('hts://')) return url;
-            // CRITICAL: Use current port from backend, not stale localStorage
             const port = window.hts_current_port || localStorage.getItem('hts_server_port');
             if (!port) return url;
             return url.replace('hts://', `http://127.0.0.1:${port}/`);
@@ -1832,7 +1678,6 @@
         ],
 
         init: function() {
-            console.log("💿 Video Core Subsystem Initializing...");
             this.player = document.getElementById('hts-main-video');
             if (this.player) {
                 this.player.addEventListener('error', () => {
@@ -1859,29 +1704,23 @@
                             return Object.assign({}, v, { url: u.toString() });
                         } catch(e) { return v; }
                     }
-                    // file:// URLs stored as-is — they are stable absolute paths
                     return v;
                 });
                 localStorage.setItem('hts_media_pool', JSON.stringify(portable));
             };
             
             this.setFavorite = function(idx) {
-                // Any item (including protected fish_tank/deep_space) can be favorite
                 if (idx < 0 || idx >= this.mediaPool.length) return;
                 const wasAlready = this.mediaPool[idx].favorite === true;
-                // Track currently playing item so we can retrack after sort
                 const playingId = this.mediaPool[this.activeIdx] ? this.mediaPool[this.activeIdx].id : null;
-                // Clear all favorites first
                 this.mediaPool.forEach(v => { v.favorite = false; });
                 if (!wasAlready) {
                     this.mediaPool[idx].favorite = true;
                 }
-                // Sort: favorite item floats to top, everything else keeps order
                 const favItem = this.mediaPool.find(v => v.favorite);
                 const others  = this.mediaPool.filter(v => !v.favorite);
                 this.mediaPool = favItem ? [favItem, ...others] : others;
                 this.savePool();
-                // Retrack activeIdx to same playing item after sort
                 if (playingId) {
                     const ni = this.mediaPool.findIndex(v => v.id === playingId);
                     if (ni !== -1) { this.activeIdx = ni; localStorage.setItem('hts_active_idx', ni); }
@@ -1916,19 +1755,16 @@
                 this.mediaPool = [...this.defaults];
             }
             
-            // ENSURE SYSTEM PROTECTION
             this.defaults.forEach(defaultVideo => {
                 if (!this.mediaPool.some(v => v.id === defaultVideo.id)) {
                     this.mediaPool.unshift(defaultVideo);
                 }
             });
 
-            // If no favorite set yet, default to fish_tank (index 0)
             const hasFav = this.mediaPool.some(v => v.favorite === true);
             if (!hasFav && this.mediaPool.length > 0) {
                 this.mediaPool[0].favorite = true;
             }
-            // Sort: favorite floats to top, rest keeps order
             const _favItem = this.mediaPool.find(v => v.favorite);
             const _others  = this.mediaPool.filter(v => !v.favorite);
             this.mediaPool = _favItem ? [_favItem, ..._others] : _others;
@@ -1936,12 +1772,6 @@
             this.savePool();
 
             if(this.player) {
-                this.player.addEventListener('dblclick', () => { 
-                    const saver = localStorage.getItem('hts_active_screensaver');
-                    if (saver === 'VIDEO') this.forceScreensaver(null); 
-                    else CinemaModule.toggle(); 
-                });
-                
                 if (this.seeker) {
                     this.player.addEventListener('timeupdate', () => {
                         this.updateSeeker();
@@ -1949,13 +1779,11 @@
                         if (!item || !this.player.currentTime) return;
                         const now = Math.floor(this.player.currentTime);
                         const dur = this.player.duration;
-                        // Save position every 5 seconds
                         const key = 'hts_pos_' + (item.id || item.name);
                         const last = parseInt(localStorage.getItem(key)) || 0;
                         if (now > 1 && Math.abs(now - last) >= 5) {
                             localStorage.setItem(key, now);
                         }
-                        // Update LCD sub with live time index — throttle to once per second
                         if (now !== this._lastLCDSecond) {
                             this._lastLCDSecond = now;
                             const state = this.player.paused ? 'PAUSED' : 'PLAYING';
@@ -1975,16 +1803,20 @@
                 }
             }
 
-            // LOAD THEME VIA STEALTH BOOT
-            loadSavedTheme();
-            
-            // CHECK SCREENSAVER MODE will be called after port sync in initBridge()
+            // Bind DBLCLICK to the hero container to guarantee it fires
+            const heroContainer = document.getElementById('viewscreen-hero');
+            if (heroContainer) {
+                heroContainer.addEventListener('dblclick', () => { 
+                    const saver = localStorage.getItem('hts_active_screensaver');
+                    if (saver === 'VIDEO') window.VideoModule.forceScreensaver(null); 
+                    else if (window.CinemaModule) window.CinemaModule.toggle(); 
+                });
+            }
 
+            loadSavedTheme();
             this.startHeartbeat();
             this.initBridge();
             
-            // GUARANTEED BOOT: Fire the video unconditionally. 
-            // If the port isn't synced yet, handleVideoSelect will securely queue it.
             if (!window._video_has_booted) {
                 window._video_has_booted = true;
                 this.checkScreensaverMode();
@@ -1993,37 +1825,26 @@
             const blackout = localStorage.getItem('hts_blackout') === 'true';
             const blackoutBtn = document.getElementById('btn-blackout');
             if(blackoutBtn) blackoutBtn.innerText = blackout ? "BACKDROP: BLACK" : "BACKDROP: BLUR";
-			// --- UPDATED EXIT BUTTON CHECK ---
+            
             const exitState = localStorage.getItem('hts_cinema_exit') !== 'false';
             const exitBtnEl = document.getElementById('btn-exit-toggle');
             if(exitBtnEl) exitBtnEl.innerText = exitState ? "CINEMA EXIT BTN: VISIBLE" : "CINEMA EXIT BTN: HIDDEN";
-            // --------------------------------------
-
-            console.log("✅ Video Core Subsystem Online");
         },
         
       checkScreensaverMode: function() {
-            // FIX: Always boot into VIDEO mode for the dashboard background.
-            // The HTML screensaver (if selected) will only load when you click "SAVER" (LockModule).
-            
-            console.log("📼 System Boot: Initializing Video Background");
-            
             const htmlFrame = document.getElementById('html-saver-frame');
             const videoPlayer = document.getElementById('hts-main-video');
             const controls = document.getElementById('hero-seeker');
             
-            // 1. Hide HTML Layer (It waits for Lock Mode)
             if(htmlFrame) {
                 htmlFrame.style.display = 'none';
                 htmlFrame.style.opacity = '0';
-                htmlFrame.src = ''; // Don't even load it yet to save resources
+                htmlFrame.src = ''; 
             }
 
-            // 2. Force Video Layer Active
             if(videoPlayer) videoPlayer.style.display = 'block';
             if(controls) controls.style.display = 'block';
             
-            // 3. Start the playlist — boot on favorite if set, else last savedIdx
             const favIdx = this.mediaPool.findIndex(v => v.favorite === true);
             const savedIdx = parseInt(localStorage.getItem('hts_active_idx')) || 0;
             this.handleVideoSelect(favIdx !== -1 ? favIdx : savedIdx);
@@ -2057,12 +1878,11 @@
             }
         },
 
-handleVideoSelect: function(idx) {
+        handleVideoSelect: function(idx) {
             if (idx < 0 || idx >= this.mediaPool.length) idx = 0;
             this.activeIdx = idx;
             let item = this.mediaPool[idx];
             
-            // 1. Port Re-Sync Engine
             let finalUrl = item.url;
             if (finalUrl.startsWith('http://127.0.0.1:')) {
                 const livePort = window.hts_current_port || localStorage.getItem('hts_server_port');
@@ -2071,55 +1891,38 @@ handleVideoSelect: function(idx) {
                         const urlObj = new URL(finalUrl);
                         urlObj.port = livePort;
                         finalUrl = urlObj.toString();
-                        console.log("⚓ Port Scrubbed: " + livePort);
-                    } catch (e) { console.error("URL Scrub Error:", e); }
+                    } catch (e) { }
                 } else {
-                    console.warn("⏳ Waiting for port...");
                     setTimeout(() => this.handleVideoSelect(idx), 500);
                     return;
                 }
             }
 
             if (this.player) {
-                // 2. Physical Reset
                 this.player.pause();
                 this.player.src = "";
                 this.player.load(); 
 
-                // 3. Prep State
-                this.player.muted = true; 
+                // NO MORE FORCED MUTE HACKS.
                 this.player.src = finalUrl;
 
-                // 4. THE VISUAL PAINT LOGIC
                 if (item.protected) {
-                    // SMALL DEFAULT: Immediate Autoplay
-                    console.log("🚀 Default: Autoplay");
-                    this.player.play().then(() => {
-                        setTimeout(() => { this.player.muted = false; }, 150);
-                    }).catch(e => console.warn("Autoplay blocked."));
+                    this.player.play().catch(e => console.warn("Autoplay blocked."));
                 } else {
-                    // LARGE VAULT FILE: Load, Seek, and Paint Frame
-                    console.log("📦 Vault File: Rendering Resume Frame...");
                     const saveKey = 'hts_pos_' + (item.id || item.name);
                     const savedTime = parseFloat(localStorage.getItem(saveKey)) || 0;
 
-                    // This event fires when the browser has enough data to show a frame
                     const onCanPlay = () => {
                         if (savedTime > 0) {
                             this.player.currentTime = savedTime;
                         }
-                        // Briefly "kick" the player to force the decoder to paint the frame
                         this.player.play().then(() => {
                             this.player.pause();
-                            this.player.muted = false; 
                         }).catch(() => {
-                            // Fallback if play() is strictly blocked
                             this.player.currentTime = savedTime;
                         });
-                        
                         this.player.removeEventListener('canplay', onCanPlay);
                     };
-
                     this.player.addEventListener('canplay', onCanPlay);
                 }
             }
@@ -2128,17 +1931,15 @@ handleVideoSelect: function(idx) {
             const lcdStatus = item.protected ? 'AUTOPLAY...' : 'RESUME READY';
             this.updateLCD(item.name.toUpperCase(), lcdStatus);
             this.renderSidePanel();
-            this.updateVolumeBtn();
+            this.updateVolumeBtn(); 
             this.broadcastList();
-        },// end of handleVideoSelect---------------------------------------------------------------------------------------------------------------------------
+        },
         initBridge: function() {
             window.addEventListener("message", (e) => {
              if (e.data.type === "HTS_PORT_SYNC") {
                     window.hts_current_port = e.data.port;
                     localStorage.setItem('hts_server_port', e.data.port);
-                    console.log("⚓ Backend Handshake Locked: " + window.hts_current_port);
                     
-                    // If the video missed the boot, catch it here
                     if (!window._video_has_booted && e.data.port !== "0") {
                         window._video_has_booted = true;
                         this.checkScreensaverMode();
@@ -2146,32 +1947,27 @@ handleVideoSelect: function(idx) {
                     return;
                 }
 
-                // WATCHDOG CLEARANCE: Control panel confirmed alive
                 if (e.data.type === "HTS_PANEL_ALIVE") {
                     _controlPanelAlive = true;
                     if (_injectionWatchdog) clearTimeout(_injectionWatchdog);
-                    console.log("✅ Control Panel Alive - Watchdog cleared");
                     return;
                 }
 
                 if (e.data.type === "HTS_CMD") {
                     const action = e.data.action;
-                    
-                    // LOG every button press
                     if (action !== 'wake_up') {
-                        console.log("🎮 Button pressed: " + action);
                         sendOverlaySignal("btn_press|" + action);
                     }
                     
                     try {
                         switch(action) {
-                            case 'calibration_toggle': CalibrationEngine.toggle(); break;
-                            case 'calibration_input': CalibrationEngine.forceInput(e.data.key, e.data.shift); break;
+                            case 'calibration_toggle': if(window.CalibrationEngine) window.CalibrationEngine.toggle(); break;
+                            case 'calibration_input': if(window.CalibrationEngine) window.CalibrationEngine.forceInput(e.data.key, e.data.shift); break;
                             case 'play_idx': this.handleVideoSelect(e.data.data); break;
                             case 'toggle_settings': this.toggleMenu(true); break;
                             case 'open_browser': window.location.href = "theme-browser.html"; break;
                             case 'saver': this.forceScreensaver(null); break;
-                            case 'fullscreen': CinemaModule.toggle(); break;
+                            case 'fullscreen': if(window.CinemaModule) window.CinemaModule.toggle(); break;
                             case 'doctor': this.openDoctor(); break;
                             case 'import': this.triggerImport(); break;
                             case 'volume': this.toggleVolume(); break;
@@ -2180,55 +1976,38 @@ handleVideoSelect: function(idx) {
                             case 'rewind': this.seek(-10); break;
                             case 'fast_forward': this.seek(10); break;
                             case 'manual': { const manHud = document.getElementById('hud-manual'); if(manHud) manHud.style.display = 'flex'; break; }
-                          case 'toggle': {
-							if (!this.player) break;
-
-							// FORCE-KICK: If the video is stuck on a black screen (readyState < 2)
-							// or if the source is somehow uninitialized, we do a HARD reset.
-							if (this.player.readyState < 2 || !this.player.src || this.player.src.includes(':0')) {
-								console.log("🚨 Hard Reset Triggered: Resuscitating video thread...");
-								const activeIdx = parseInt(localStorage.getItem('hts_active_idx')) || 0;
-								this.handleVideoSelect(activeIdx); 
-								return; // handleVideoSelect handles the play() call
-							}
-
-							// Standard Toggle if thread is healthy
-							if (!this.player.paused && !this.player.muted) {
-								this.player.pause();
-							} else {
-								this.player.muted = true; 
-								this.player.play().then(() => {
-									setTimeout(() => { this.player.muted = false; }, 150);
-								}).catch(() => {
-									this.player.muted = true;
-									this.player.play();
-								});
-							}
-							break;
-						}
+                            case 'toggle': {
+                                if (!this.player) break;
+                                if (this.player.readyState < 2 || !this.player.src || this.player.src.includes(':0')) {
+                                    const activeIdx = parseInt(localStorage.getItem('hts_active_idx')) || 0;
+                                    this.handleVideoSelect(activeIdx); 
+                                    return; 
+                                }
+                                if (!this.player.paused) {
+                                    this.player.pause();
+                                } else {
+                                    this.player.play(); 
+                                }
+                                break;
+                            }
                             case 'chooser_opened': {
-                                // Pause video while file chooser is open; remember state so we can restore it
                                 if (this.player && !this.player.paused) {
                                     this.player._pausedByChooser = true;
                                     this.player.pause();
-                                    console.log("⏸ Chooser opened — video paused");
                                 }
                                 break;
                             }
                             case 'chooser_closed': {
-                                // Resume only if we were the ones who paused it
                                 if (this.player && this.player._pausedByChooser) {
                                     this.player._pausedByChooser = false;
                                     this.player.play().catch(() => {});
-                                    console.log("▶ Chooser closed — video resumed");
                                 }
                                 break;
                             }
                             case 'expand_list': { 
                                 const sp = document.getElementById('side-playlist'); 
                                 if(sp) {
-                                    const isOpen = sp.classList.contains('open');
-                                    if (isOpen) {
+                                    if (sp.classList.contains('open')) {
                                         sp.classList.remove('open');
                                         sendOverlaySignal('overlay_logo_show');
                                     } else {
@@ -2239,10 +2018,9 @@ handleVideoSelect: function(idx) {
                                 }
                                 break; 
                             }
-                            case 'wake_up': if (LockModule.isLocked) LockModule.showPrompt(); if (CinemaModule.active) CinemaModule.exit(); break;
+                            case 'wake_up': if (window.LockModule && window.LockModule.isLocked) window.LockModule.showPrompt(); if (window.CinemaModule && window.CinemaModule.active) window.CinemaModule.exit(); break;
                             case 'delete_active': this.deleteVideo(this.activeIdx); break;
                             case 'set_favorite': {
-                                // data = pool index sent from theme, or use activeIdx as fallback
                                 const fi = (e.data.data !== undefined && e.data.data !== null)
                                     ? parseInt(e.data.data) : this.activeIdx;
                                 this.setFavorite(fi);
@@ -2276,7 +2054,6 @@ handleVideoSelect: function(idx) {
                                         verified: verified
                                     });
                                     this.savePool();
-                                    console.log(`📦 Video imported: ${fileName} (${(fileSize / (1024*1024)).toFixed(2)} MB, Hash: ${fileHash.substring(0,8)}...)`);
                                 }
                                 this.handleVideoSelect(this.mediaPool.length - 1);
                                 break;
@@ -2288,7 +2065,6 @@ handleVideoSelect: function(idx) {
                                 const pctEl   = document.getElementById('imp-pct');
                                 const nameEl  = document.getElementById('imp-name');
                                 if (d.done) {
-                                    // Animate to 100%, hold 10s so user can see it, then hide
                                     if (fill)  { fill.style.transition = 'width 0.8s ease'; fill.style.width = '100%'; }
                                     if (pctEl) pctEl.innerText = '100%';
                                     if (overlay) overlay.style.display = 'block';
@@ -2305,14 +2081,12 @@ handleVideoSelect: function(idx) {
                                     if (pctEl) pctEl.innerText = d.pct + '%';
                                     if (nameEl && d.name) nameEl.innerText = d.name.length > 55 ? d.name.substring(0,52)+'…' : d.name;
                                     const vaultHud = document.getElementById('hud-vault');
-                                    if (vaultHud && vaultHud.style.display === 'flex') VaultBrowser.scan();
+                                    if (vaultHud && vaultHud.style.display === 'flex') { if(window.VaultBrowser) window.VaultBrowser.scan(); }
                                 }
                                 break;
                             }
-                            default: console.log("🎮 Unhandled action: " + action); break;
                         }
                     } catch(cmdErr) {
-                        console.error("🚨 BUTTON CRASH [" + action + "]: " + cmdErr.message);
                         sendOverlaySignal("btn_crash|" + action + "|" + cmdErr.message);
                     }
                 }
@@ -2329,19 +2103,16 @@ handleVideoSelect: function(idx) {
                     if (rawPath.startsWith("FACEPLATE|")) {
                         const imagePath = rawPath.split("|")[1];
                         activeThemeID = imagePath; 
-                        CalibrationEngine.loadProfile(activeThemeID);
+                        if(window.CalibrationEngine) window.CalibrationEngine.loadProfile(activeThemeID);
                         
                         const baseTheme = "file:///app/bin/data/control-panel-themes/theme_faceplate.html";
                         frame.src = baseTheme;
                         
-                        // WAIT for frame to actually load before injecting
                         frame.onload = function() {
                             const frameUrl = this.contentWindow?.location?.href || '';
                             if (!frameUrl || frameUrl === 'about:blank') return;
-                            console.log("✅ Theme loaded, injecting protocol into:", frameUrl);
                             setTimeout(() => {
                                 injectSystemProtocol(this);
-                                // Clear any previous faceplate interval before creating new one
                                 if (window._faceplateInterval) clearInterval(window._faceplateInterval);
                                 window._faceplateInterval = setInterval(() => { 
                                     if(frame.contentWindow) frame.contentWindow.postMessage({ type: 'SET_FACEPLATE', path: imagePath }, '*'); 
@@ -2351,23 +2122,19 @@ handleVideoSelect: function(idx) {
                         };
                         
                     } else {
-                        // Safety: only load known theme files into the iframe
                         if (!rawPath.includes('control-panel-themes/') && !rawPath.includes('theme_')) {
-                            console.warn("HTS: RESTORE_THEME blocked unsafe path:", rawPath);
                             return;
                         }
                         const parts = rawPath.split('/');
                         const filename = parts[parts.length - 1];
                         activeThemeID = filename;
-                        CalibrationEngine.loadProfile(activeThemeID);
+                        if(window.CalibrationEngine) window.CalibrationEngine.loadProfile(activeThemeID);
                         
                         frame.src = rawPath;
                         
-                        // WAIT for frame to actually load before injecting
                         frame.onload = function() {
                             const frameUrl = this.contentWindow?.location?.href || '';
                             if (!frameUrl || frameUrl === 'about:blank') return;
-                            console.log("✅ Theme loaded, injecting protocol into:", frameUrl);
                             setTimeout(() => injectSystemProtocol(this), 150);
                             setTimeout(enforceBottomAnchor, 300);
                         };
@@ -2375,8 +2142,10 @@ handleVideoSelect: function(idx) {
                 }
 
                 if (e.data.type === 'THEME_RESIZE') {
-                    CalibrationEngine.baseHeight = e.data.height;
-                    CalibrationEngine.apply();
+                    if(window.CalibrationEngine) {
+                        window.CalibrationEngine.baseHeight = e.data.height;
+                        window.CalibrationEngine.apply();
+                    }
                 }
             });
         },
@@ -2385,29 +2154,24 @@ handleVideoSelect: function(idx) {
             if (!this.mediaPool[idx] || this.mediaPool[idx].protected) return;
             const video = this.mediaPool[idx];
             if (!confirm("Permanent Deletion Check: " + video.name + "?")) return;
-            console.log("🗑️  DELETE INITIATED: " + video.name);
             if (this.activeIdx === idx && this.player) {
                 this.player.pause(); this.player.src = ""; this.player.load();
-                console.log("⏹️  Playback stopped");
             }
             if (video.url.startsWith('http://127.0.0.1:')) {
                 try {
                     const urlObj = new URL(video.url);
                     const filename = decodeURIComponent(urlObj.pathname.substring(1)); 
-                    console.log("📡 Sending delete request to backend: " + filename);
                     sendOverlaySignal('delete_video|' + filename);
-                } catch (e) { console.error("URL parsing error:", e); }
+                } catch (e) { }
             }
             this.mediaPool.splice(idx, 1);
             this.savePool();
-            console.log("✓ Removed from media pool");
             if (this.activeIdx === idx) {
-                if (this.mediaPool.length === 0) { console.log("⚠️  No videos left in pool"); this.activeIdx = 0; } 
+                if (this.mediaPool.length === 0) { this.activeIdx = 0; } 
                 else if (this.activeIdx >= this.mediaPool.length) { this.activeIdx = this.mediaPool.length - 1; }
                 this.handleVideoSelect(this.activeIdx);
             } else if (this.activeIdx > idx) { this.activeIdx--; }
             this.renderSidePanel();
-            console.log("✓ DELETE COMPLETE");
         },
 
         renderSidePanel: function() {
@@ -2417,7 +2181,6 @@ handleVideoSelect: function(idx) {
             this.mediaPool.forEach((item, i) => {
                 const el = document.createElement('div');
                 el.className = 'sp-item' + (i === this.activeIdx ? ' active' : '');
-                // Favorite bubble — click to toggle
                 const favDot = document.createElement('span');
                 favDot.className = 'sp-fav-dot' + (item.favorite ? '' : ' empty');
                 favDot.title = item.favorite ? 'Remove favorite' : 'Set as favorite (boots first)';
@@ -2444,47 +2207,37 @@ handleVideoSelect: function(idx) {
         updateVolumeBtn: function() { const btn = document.getElementById('btn-volume'); if(btn && this.player) { btn.innerText = "VOLUME: " + (this.player.muted ? "0%" : Math.round(this.player.volume * 100) + "%"); } },
         toggleVolume: function() { 
             if(!this.player) return; 
-            this.player.muted = false; /* Force unmute */
+            this.player.muted = false; 
             this.player.volume = this.player.volume > 0 ? 0 : 1; 
             this.updateVolumeBtn(); 
         },
         adjustVolume: function(delta) { 
             if(!this.player) return; 
-            this.player.muted = false; /* Force unmute */
+            this.player.muted = false; 
             this.player.volume = Math.min(1, Math.max(0, this.player.volume + delta)); 
             this.updateVolumeBtn(); 
         },
         seek: function(seconds) { if (this.player) this.player.currentTime += seconds; },
         toggleBlackout: function() { const current = localStorage.getItem('hts_blackout') === 'true'; localStorage.setItem('hts_blackout', !current); const btn = document.getElementById('btn-blackout'); if(btn) btn.innerText = !current ? "BACKDROP: BLACK" : "BACKDROP: BLUR"; },
        toggleExitBtn: function() { 
-            const current = localStorage.getItem('hts_cinema_exit') !== 'false'; // Defaults to true (visible)
+            const current = localStorage.getItem('hts_cinema_exit') !== 'false'; 
             const newState = !current; 
             localStorage.setItem('hts_cinema_exit', newState); 
             const btn = document.getElementById('btn-exit-toggle'); 
             if(btn) btn.innerText = newState ? "CINEMA EXIT BTN: VISIBLE" : "CINEMA EXIT BTN: HIDDEN"; 
         },
      startHeartbeat: function() {
-            // Store interval ID so it can be cleared if needed
             if (this._heartbeatInterval) clearInterval(this._heartbeatInterval);
-            
-            // Delay first pulse by 2 seconds to allow injection to complete cleanly
             setTimeout(() => {
-                // Pulse every 2 seconds
                 this._heartbeatInterval = setInterval(() => {
                     const frame = document.getElementById('furniture-frame');
-                    
-                    // Only speak if the frame is ready and we have videos
                     if (frame?.contentWindow && this.mediaPool && this.mediaPool.length > 0) {
-                        
-                        // 1. Send the Playlist (Existing)
                         frame.contentWindow.postMessage({ 
                             type: "RENDER_LIST", 
                             pool: this.mediaPool, 
                             activeIdx: this.activeIdx 
                         }, "*");
 
-                        // 2. FIX: Send the LCD Text (New)
-                        // This forces the text to update every cycle
                         const currentItem = this.mediaPool[this.activeIdx];
                         const status = (this.player && !this.player.paused) ? "PLAYING..." : "PAUSED";
                         
@@ -2500,7 +2253,7 @@ handleVideoSelect: function(idx) {
             }, 2000);
         },
         updateLCD: function(main, sub) { const frame = document.getElementById('furniture-frame'); if (frame?.contentWindow) { frame.contentWindow.postMessage({ type: 'UPDATE_LCD', main: main, sub: sub }, "*"); } },
-        forceScreensaver: function(e) { LockModule.engage(); },
+        forceScreensaver: function(e) { if(window.LockModule) window.LockModule.engage(); },
         toggleMenu: function(show) {
             const hud = document.getElementById('hud-general');
             if (!hud) return;
@@ -2521,6 +2274,13 @@ handleVideoSelect: function(idx) {
         },
     };
 
+    // EXPOSE MODULES GLOBALLY SO KEY LISTENERS CAN ACCESS THEM
+    window.VideoModule = VideoModule;
+    window.CalibrationEngine = CalibrationEngine;
+    window.CinemaModule = CinemaModule;
+    window.LockModule = LockModule;
+    window.VaultBrowser = VaultBrowser;
+
     function forceDefaultTheme() {
         const defaultPath = "file:///app/bin/data/pages/theme_original.html";
         const furn = document.getElementById('furniture-frame');
@@ -2535,24 +2295,18 @@ handleVideoSelect: function(idx) {
         const frame = document.getElementById('furniture-frame');
         if (!frame || !frame.contentDocument || !frame.contentDocument.body) return;
         
-        // 1. Detect and Lock Height
         lockedThemeHeight = frame.contentDocument.body.scrollHeight;
         
         const safeId = activeThemeID.replace(/[^a-zA-Z0-9]/g, "_");
         const saved = localStorage.getItem('hts_offset_' + safeId);
         
-        // 2. If no user preference, snap to bottom (Offset 0)
         if (saved === null) {
-            CalibrationEngine.userOffset = 0;
-            CalibrationEngine.apply();
-            console.log(`[GOLD SNAP] Height Locked: ${lockedThemeHeight}px | Reset to Bottom.`);
+            window.CalibrationEngine.userOffset = 0;
+            window.CalibrationEngine.apply();
         } else {
-            // Apply saved offset (User might have moved it)
-            CalibrationEngine.userOffset = parseInt(saved);
-            CalibrationEngine.apply();
+            window.CalibrationEngine.userOffset = parseInt(saved);
+            window.CalibrationEngine.apply();
         }
-        
-        // --- STEALTH BOOT: REVEAL ---
         frame.style.opacity = '1';
     }
 
@@ -2562,63 +2316,45 @@ handleVideoSelect: function(idx) {
         const DEFAULT_THEME = "file:///app/bin/data/pages/theme_original.html";
         const FALLBACK_THEME = "file:///app/bin/data/pages/theme_original.html";
         let saved = localStorage.getItem('hts_theme_preference') || DEFAULT_THEME;
-        // Safety: only allow paths from known theme locations — never an arbitrary HTS page
         const isValidTheme = saved.includes('control-panel-themes/') || saved.includes('data/pages/theme_original.html');
         if (!isValidTheme) {
-            console.warn("HTS: Invalid theme path in localStorage, resetting:", saved);
             saved = DEFAULT_THEME;
             localStorage.setItem('hts_theme_preference', saved);
         }
         const parts = saved.split('/');
         activeThemeID = parts[parts.length - 1];
 
-        // Fallback: if the theme file is missing, silently load the protected copy from pages/
         frame.onerror = function() {
-            console.warn("HTS: Theme file missing, loading fallback from pages/");
             frame.onerror = null;
             frame.src = FALLBACK_THEME;
         };
         frame.src = saved;
         
-        // --- SAFETY NET: Force Reveal if logic hangs ---
         setTimeout(() => {
             if(frame.style.opacity !== '1') {
-                console.warn("⚠️ Stealth Boot Timeout: Forcing Reveal");
                 frame.style.opacity = '1';
             }
         }, 500);
     }
 
   window.onload = () => { 
-        console.log("🚀 HTS CORE BOOT SEQUENCE INITIATED");
-        // CALIBRATION & VIDEO MUST INIT BEFORE THEME
-        CalibrationEngine.init(); 
-        VideoModule.init(); 
-        LockModule.init(); 
-        
-        // NOW LOAD THEME
+        window.CalibrationEngine.init(); 
+        window.VideoModule.init(); 
+        window.LockModule.init(); 
         loadSavedTheme(); 
-        console.log("🚀 HTS CORE SYSTEMS STABILIZED");
         
         const frame = document.getElementById('furniture-frame');
         if (frame) {
             frame.onload = function() {
                 const frameUrl = this.contentWindow?.location?.href || '';
-                
-                // NEVER inject into about:blank - theme isn't loaded yet
                 if (!frameUrl || frameUrl === 'about:blank') {
-                    console.log("⏭️ Skipping injection on about:blank - waiting for real theme");
                     setTimeout(enforceBottomAnchor, 200);
                     return;
                 }
-                
-                console.log("✅ Theme loaded, injecting protocol into:", frameUrl);
-                
-                // Safe execution guard - only inject if function exists
                 if (typeof injectSystemProtocol === "function") {
                     setTimeout(() => {
                         injectSystemProtocol(this);
-                    }, 150); // Delay to ensure iframe is fully ready
+                    }, 150); 
                 }
                 setTimeout(enforceBottomAnchor, 300);
             };
@@ -2627,39 +2363,39 @@ handleVideoSelect: function(idx) {
 
     // --- GLOBAL MEDIA HOTKEYS & SYSTEM CONTROLS ---
     window.addEventListener('keydown', function(e) {
-        // Prevent hotkeys while typing in PIN or input boxes
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-        // SPACEBAR: Routes to the 'toggle' case to utilize the Stall Kicker logic
-        if (e.code === 'Space') {
+        // DIRECT PLAY/PAUSE
+        if (e.code === 'Space' || e.key === ' ') {
             e.preventDefault();
-            if (window.VideoModule) {
-                // This triggers the Hard Reset logic to wake up stalled movies
-                VideoModule.initBridge({ data: { type: 'HTS_CMD', action: 'toggle' } });
+            if (window.VideoModule && window.VideoModule.player) {
+                if (window.VideoModule.player.readyState < 2 || !window.VideoModule.player.src || window.VideoModule.player.src.includes(':0')) {
+                    const activeIdx = parseInt(localStorage.getItem('hts_active_idx')) || 0;
+                    window.VideoModule.handleVideoSelect(activeIdx); 
+                } else if (!window.VideoModule.player.paused) {
+                    window.VideoModule.player.pause();
+                } else {
+                    window.VideoModule.player.play();
+                }
             }
         }
 
-        // ARROWS: Global Volume Control (Standardized across all modes)
+        // DIRECT VOLUME CONTROL
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            // Do not adjust volume if Calibration Mode is moving the UI
-            if (window.CalibrationEngine && CalibrationEngine.active) return;
-            
+            if (window.CalibrationEngine && window.CalibrationEngine.active) return;
             e.preventDefault();
             if (window.VideoModule) {
-                VideoModule.adjustVolume(e.key === 'ArrowUp' ? 0.1 : -0.1);
+                window.VideoModule.adjustVolume(e.key === 'ArrowUp' ? 0.1 : -0.1);
             }
         }
 
-        // ESCAPE: Close Vault Browser
         if (e.key === "Escape") {
             const vault = document.getElementById('hud-vault');
-            if (vault && vault.style.display === 'flex') { VaultBrowser.toggle(); return; }
+            if (vault && vault.style.display === 'flex') { window.VaultBrowser.toggle(); return; }
         }
 
-        // F5: Emergency Theme Recovery
         if (e.key === "F5") {
             e.preventDefault();
-            console.log("🛠️ HTS SYSTEM RECOVERY: Resetting to Original Panel...");
             localStorage.removeItem('hts_theme_preference');
             if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
                 window.webkit.messageHandlers.hts_browser_sync.postMessage("save_theme|");
@@ -2670,8 +2406,6 @@ handleVideoSelect: function(idx) {
 
     // --- NATIVE FACEPLATE RECEIVER & GALLERY MANAGER ---
     window.receiveSelectedFaceplate = function(fileUri) {
-        console.log("🖼️ Faceplate Received:", fileUri);
-        
         const frame = document.getElementById('furniture-frame');
         if (frame && frame.contentWindow) {
             frame.contentWindow.postMessage({ type: 'SET_FACEPLATE', path: fileUri }, '*');
