@@ -189,8 +189,65 @@
             font-size: 10px;
             font-family: monospace;
             text-align: center;
-            padding: 10px;
+            padding: 0;
+            border-radius: 4px;
+            cursor: zoom-in;
+            overflow: hidden;
+            position: relative;
+            transition: 0.3s ease;
         }
+
+        .book-cover-slot:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(189, 0, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .book-cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the thumbnail fills the box beautifully */
+        }
+
+        /* --- MODAL LIGHTBOX --- */
+        .modal-backdrop {
+            display: none; 
+            position: fixed; 
+            z-index: 9999; 
+            left: 0; 
+            top: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background-color: rgba(0, 0, 0, 0.92); 
+            align-items: center; 
+            justify-content: center;
+            cursor: zoom-out;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            max-width: 90vw; 
+            max-height: 90vh; 
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 50px rgba(189, 0, 255, 0.2);
+            border-radius: 4px;
+            object-fit: contain;
+            cursor: default;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 25px;
+            right: 40px;
+            color: #666;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .close-modal-btn:hover { color: var(--accent); }
 
         /* --- DONATION SECTION --- */
         .donation-section {
@@ -316,6 +373,11 @@
 </head>
 <body>
 
+    <div id="image-modal" class="modal-backdrop" onclick="closeModal()">
+        <span class="close-modal-btn" onclick="closeModal()">&times;</span>
+        <img id="enlarged-img" class="modal-content" src="BOOK-COVER.png" alt="The Unseen Clock - Full Cover" onclick="event.stopPropagation();">
+    </div>
+
     <div class="container">
         <h1>ECOSYSTEM</h1>
         <span class="subtitle">INTEGRATION // LITERATURE // ENTERTAINMENT</span>
@@ -372,8 +434,8 @@
         </div>
 
         <div class="book-section">
-            <div class="book-cover-slot">
-                [ BOOK COVER ]<br>THE UNSEEN CLOCK
+            <div class="book-cover-slot" onclick="openModal()" title="Click to enlarge">
+                <img src="BOOK-COVER.png" alt="The Unseen Clock Cover Thumbnail" class="book-cover-img" onerror="this.outerHTML='<div style=\'padding:10px;\'>[ MISSING IMAGE ]<br>BOOK-COVER.png</div>'">
             </div>
             <div class="info-block" style="flex: 1;">
                 <h3>Essential Reading</h3>
@@ -414,5 +476,23 @@
         <a href="../../index.html?tab=about" class="back-btn"><< RETURN TO ABOUT V2</a>
     </div>
 
+    <script>
+        const modal = document.getElementById("image-modal");
+
+        function openModal() {
+            modal.style.display = "flex";
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        // Allow closing the modal with the Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && modal.style.display === "flex") {
+                closeModal();
+            }
+        });
+    </script>
 </body>
 </html>

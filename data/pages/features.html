@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTS - System Changelog</title>
+    <title>HTS - System Features</title>
     <style>
         :root { 
             --neon-blue: #00d4ff; 
@@ -22,7 +22,7 @@
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
 
-        /* --- UNIFIED NAV (Matched to empty.html) --- */
+        /* --- UNIFIED NAV --- */
         .nav-bar { 
             width: 100%; background: #111; display: flex; justify-content: center; 
             gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
@@ -51,16 +51,57 @@
             font-size: 3rem; 
             margin-bottom: 50px; 
             text-align: center;
+            letter-spacing: 5px;
+            text-transform: uppercase;
         }
         
-        .log-entry { margin-bottom: 40px; border-left: 2px solid #222; padding-left: 25px; }
-        .log-ver { color: var(--neon-blue); font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; }
-        .log-date { font-size: 12px; color: #555; margin-bottom: 15px; font-family: monospace; letter-spacing: 1px; }
-        .log-item { margin-bottom: 8px; font-size: 15px; color: #bbb; line-height: 1.4; }
+        .feature-category { 
+            margin-bottom: 50px; 
+            border-left: 2px solid var(--neon-blue); 
+            padding-left: 25px; 
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.05) 0%, transparent 100%);
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
         
-        .badge { font-size: 10px; padding: 3px 8px; border-radius: 2px; font-weight: bold; margin-right: 10px; display: inline-block; }
-        .badge.fix { background: rgba(255, 49, 49, 0.15); color: var(--neon-red); border: 1px solid var(--neon-red); }
-        .badge.new { background: rgba(57, 255, 20, 0.15); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .cat-title { 
+            color: var(--neon-blue); 
+            font-weight: bold; 
+            font-size: 1.5rem; 
+            margin-bottom: 20px; 
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .cat-icon {
+            font-size: 2rem;
+        }
+
+        .feature-item { 
+            margin-bottom: 15px; 
+            font-size: 15px; 
+            color: #bbb; 
+            line-height: 1.6; 
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .feature-item::before {
+            content: "▹";
+            position: absolute;
+            left: 0;
+            color: var(--neon-gold);
+            font-weight: bold;
+        }
+        
+        .feat-name { 
+            color: var(--neon-green); 
+            font-weight: bold; 
+            margin-right: 5px; 
+        }
+
     </style>
 </head>
 <body>
@@ -77,31 +118,52 @@
 
     <div id="content-viewport">
         <div class="page-content-scroll">
-            <h1 class="neon-h1">System Changelog</h1>
+            <h1 class="neon-h1">System Features</h1>
 
-            <div class="log-entry">
-                <div class="log-ver">VERSION 3.0015 (HTS Media Doctor: Clinical Honesty Update)</div>
-                <div class="log-date">MONDAY FEB 02, 2026 @12:40AM</div>
-                <div class="log-item"><span class="badge fix">FIX</span> lock in and autoplay of favorites.</div>
-                <div class="log-item"><span class="badge new">NEW</span> 30-Second Stall Watchdog: Detects delayed stream freezing.</div>
-                <div class="log-item"><span class="badge new">NEW</span> In-Line Justification: Prints DNA defects on the vital line.</div>
-                <div class="log-item"><span class="badge fix">FIX</span> Renderer Honesty: Stripped false-positives to match ScreenSaver performance.</div>
-                <div class="log-item"><span class="badge new">NEW</span> Tolerance Logic: Orange (!) status for non-optimal but playable DNA.</div>
+            <div class="feature-category">
+                <div class="cat-title"><span class="cat-icon">🕰️</span> Core Timekeeping</div>
+                <div class="feature-item"><span class="feat-name">The Human Time System Engine:</span> Native implementation of the infinite, cyclical deep-time calendar (50,000-year Epochs).</div>
+                <div class="feature-item"><span class="feat-name">Live HTS HUD:</span> Persistent, highly visible HTS clock overlay across the application.</div>
+                <div class="feature-item"><span class="feat-name">Converters & Timezones:</span> Dedicated modules for translating standard Gregorian time into HTS and managing global offsets.</div>
             </div>
 
-            <div class="log-entry">
-                <div class="log-ver">VERSION 3.0011 (HUD)</div>
-                <div class="log-date">SATURDAY JAN 31, 2026 @9:60PM</div>
-                <div class="log-item"><span class="badge fix">FIX</span> This version brings the HUD.</div>
-                <div class="log-item"><span class="badge new">NEW</span> There is some bleed-through from other pages</div>
+            <div class="feature-category">
+                <div class="cat-title" style="color: var(--neon-gold); border-color: var(--neon-gold);"><span class="cat-icon">🖥️</span> Dual Architecture (CLI & GUI)</div>
+                <div class="feature-item"><span class="feat-name">Terminal Native (CLI Mode):</span> Typing `hts-time` in the terminal instantly prints the current HTS timestamp and cleanly exits, perfect for scripting or quick reference.</div>
+                <div class="feature-item"><span class="feat-name">Immersive GUI:</span> Launching from the desktop icon (or with `--gui`) boots a fully isolated, hardware-accelerated GTK/WebKit application.</div>
+                <div class="feature-item"><span class="feat-name">Surgical Terminal Silencer:</span> A completely clean stdout terminal profile when the GUI boots, keeping backend operations totally invisible to the user.</div>
             </div>
 
-            <div class="log-entry">
-                <div class="log-ver">VERSION 3.0010 (COORDINATES)</div>
-                <div class="log-date">SUNDAY JAN 18, 2026 @7:45PM</div>
-                <div class="log-item"><span class="badge fix">FIX</span> Media List "Image Map" Simulation (Zero Stretch).</div>
-                <div class="log-item"><span class="badge new">NEW</span> Layout Calibration Tools (CTRL+ALT +/-).</div>
+            <div class="feature-category" style="border-left-color: #ff3131; background: linear-gradient(90deg, rgba(255, 49, 49, 0.05) 0%, transparent 100%);">
+                <div class="cat-title" style="color: #ff3131;"><span class="cat-icon">🎨</span> Theming & Customization</div>
+                <div class="feature-item"><span class="feat-name">HTML Theme Engine:</span> Fully modular control panels. Swap between standard decks (VHS, Industrial, Starship, Leopard, etc.) or import your own standard HTML files.</div>
+                <div class="feature-item"><span class="feat-name">Faceplate Armor System:</span> Apply custom images to the dashboard panel. Includes a long-press context menu to rename, delete, or reset to default.</div>
+                <div class="feature-item"><span class="feat-name">UI Calibration Engine:</span> Press `Ctrl+C` to unlock the HUD and use the arrow keys to physically raise or lower the control panel to perfectly align with your background video. Remembers your offset per-theme.</div>
             </div>
+
+            <div class="feature-category">
+                <div class="cat-title"><span class="cat-icon">🎬</span> Media Vault & Playback</div>
+                <div class="feature-item"><span class="feat-name">Isolated Flatpak Vault:</span> A secure, sandboxed media repository specifically for your background ambiance and large video files.</div>
+                <div class="feature-item"><span class="feat-name">MicroHTTP Streaming Backend:</span> Bypasses WebKit restrictions using a custom C-based `libmicrohttpd` server, allowing for flawless, chunked streaming of massive video files without crashing the browser.</div>
+                <div class="feature-item"><span class="feat-name">Hybrid Resumable Autoplay:</span> Short ambiance videos loop automatically. Large movies and long videos automatically pause and remember the exact second you left off.</div>
+                <div class="feature-item"><span class="feat-name">Cinema Mode:</span> Instant fullscreen toggle with UI blackout, backed by global hotkeys (Spacebar for Play/Pause, Up/Down Arrows for Volume) that work no matter where you click.</div>
+                <div class="feature-item"><span class="feat-name">PulseAudio Integration:</span> Direct communication with system audio to prevent muted playback bugs.</div>
+            </div>
+
+            <div class="feature-category" style="border-left-color: var(--neon-gold); background: linear-gradient(90deg, rgba(255, 215, 0, 0.05) 0%, transparent 100%);">
+                <div class="cat-title" style="color: var(--neon-gold);"><span class="cat-icon">🛡️</span> Security & Immersive Modes</div>
+                <div class="feature-item"><span class="feat-name">Secure Screensaver Mode:</span> Launch with `--screensaver` to boot an immersive background lock screen.</div>
+                <div class="feature-item"><span class="feat-name">PIN Protection:</span> Intercepts clicks and keypresses to bring up a neon security overlay requiring a user-defined PIN to return to the system.</div>
+                <div class="feature-item"><span class="feat-name">Backdrop Blackout:</span> Toggle between frosted glass blurs or total blackouts for the area behind the control panel.</div>
+            </div>
+
+            <div class="feature-category" style="border-left-color: #ff3131; background: linear-gradient(90deg, rgba(255, 49, 49, 0.05) 0%, transparent 100%);">
+                <div class="cat-title" style="color: #ff3131;"><span class="cat-icon">🧬</span> Developer Tools ("God Mode")</div>
+                <div class="feature-item"><span class="feat-name">Theme Inspector:</span> A built-in structural analysis tool that scans imported HTML themes to verify they have the correct CSS/div requirements.</div>
+                <div class="feature-item"><span class="feat-name">Logic DNA Injector:</span> Automatically injects the HTS Javascript Protocol (the "Brain") into imported third-party HTML files so they can seamlessly control the app without manual coding.</div>
+                <div class="feature-item"><span class="feat-name">Media Doctor:</span> Live diagnostic clinic to verify Codec DNA (like VP9 stability) and monitor network stream health.</div>
+            </div>
+
         </div>
     </div>
 
