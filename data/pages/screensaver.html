@@ -12,21 +12,9 @@
     <meta charset="UTF-8">
     <title>HTS - SCREENSAVER</title>
     <script>
-        window.hts_current_port = null;
-        window._hts_boot_done = false;
-        window.addEventListener("message", function earlyPortSync(e) {
-            if (e.data && e.data.type === "HTS_PORT_SYNC") {
-                window.hts_current_port = e.data.port;
-                localStorage.setItem('hts_server_port', e.data.port);
-                window.removeEventListener("message", earlyPortSync);
-                if (!window._hts_boot_done) {
-                    window._hts_boot_done = true;
-                    if (window.VideoModule && typeof window.VideoModule.checkScreensaverMode === 'function') {
-                        window.VideoModule.checkScreensaverMode();
-                    }
-                }
-            }
-        });
+        // Store port if known, and initialize the fresh boot flag
+        window.hts_current_port = localStorage.getItem('hts_server_port') || null;
+        window._video_has_booted = false;
     </script>
     <style>
         #import-overlay {
@@ -1994,10 +1982,14 @@
 
             this.startHeartbeat();
             this.initBridge();
-            if (window.hts_current_port && !window._hts_boot_done) {
-                window._hts_boot_done = true;
+            
+            // GUARANTEED BOOT: Fire the video unconditionally. 
+            // If the port isn't synced yet, handleVideoSelect will securely queue it.
+            if (!window._video_has_booted) {
+                window._video_has_booted = true;
                 this.checkScreensaverMode();
             }
+
             const blackout = localStorage.getItem('hts_blackout') === 'true';
             const blackoutBtn = document.getElementById('btn-blackout');
             if(blackoutBtn) blackoutBtn.innerText = blackout ? "BACKDROP: BLACK" : "BACKDROP: BLUR";
@@ -2127,28 +2119,26 @@
                 const onPlaying = () => {
                     this.player.removeEventListener('playing', onPlaying);
                     const dur = this.player.duration;
-                    const isLong = dur && !isNaN(dur) && dur > 60;
 
-                    if (isLong) {
-                        // Long video: pause immediately, restore position, stay paused
-                        this.player.pause();
-                        if (savedPos > 5 && savedPos < dur - 10) {
-                            this.player.currentTime = savedPos;
-                            this.updateLCD(item.name.toUpperCase(),
-                                'PAUSED  ▶  ' + this.formatTime(savedPos) + ' / ' + this.formatTime(dur));
-                        } else {
-                            this.updateLCD(item.name.toUpperCase(),
-                                'PAUSED  ▶  PRESS PLAY TO START');
-                        }
-                        // Unmute so when user hits play they hear audio
-                        this.player.muted = false;
-                    } else {
-                        // Short clip: playing — now unmute
-                        this.player.muted = false;
+                    // If we have a saved position, seamlessly jump to it
+                    if (savedPos > 5 && (!dur || savedPos < dur - 10)) {
+                        this.player.currentTime = savedPos;
                     }
+
+                    // Attempt to unmute...
+                    this.player.muted = false;
+
+                    // AUTOPLAY TRAP: If the browser instantly pauses the video because 
+                    // we unmuted without user interaction, catch the pause and force it to play muted!
+                    setTimeout(() => {
+                        if (this.player.paused) {
+                            console.log("🔇 Browser blocked unmuted autoplay. Reverting to muted playback.");
+                            this.player.muted = true;
+                            this.player.play();
+                        }
+                    }, 150);
                 };
                 this.player.addEventListener('playing', onPlaying);
-
                 // STEP 3: Explicitly call play() muted — belt AND suspenders
                 // (autoplay attribute handles it, but explicit call is more reliable)
                 const p = this.player.play();
@@ -2173,8 +2163,10 @@
                     window.hts_current_port = e.data.port;
                     localStorage.setItem('hts_server_port', e.data.port);
                     console.log("⚓ Backend Handshake Locked: " + window.hts_current_port);
-                    if (!window._hts_boot_done) {
-                        window._hts_boot_done = true;
+                    
+                    // If the video somehow missed the boot, catch it here
+                    if (!window._video_has_booted) {
+                        window._video_has_booted = true;
                         this.checkScreensaverMode();
                     }
                     return;
@@ -2214,7 +2206,42 @@
                             case 'rewind': this.seek(-10); break;
                             case 'fast_forward': this.seek(10); break;
                             case 'manual': { const manHud = document.getElementById('hud-manual'); if(manHud) manHud.style.display = 'flex'; break; }
-                            case 'toggle': { if(this.player && !this.player.paused) this.player.pause(); else if(this.player) this.player.play(); break; }
+                            case 'toggle': { 
+                                if (this.player) {
+                                    if (!this.player.paused) {
+                                        this.player.pause();
+                                    } else {
+                                        // Reset if at the very end
+                                        if (this.player.ended) this.player.currentTime = 0;
+                                        
+                                        // 1. Force mute to guarantee WebKit allows cross-frame playback
+                                        this.player.muted = true;
+                                        const p = this.player.play();
+                                        
+                                        if (p !== undefined) {
+                                            p.then(() => {
+                                                // 2. Playback started. Now try to give audio back.
+                                                this.player.muted = false;
+                                                
+                                                // 3. THE TRAP CATCHER: If WebKit freaks out and pauses 
+                                                // the video because we unmuted it, catch it and force it to play!
+                                                setTimeout(() => {
+                                                    if (this.player.paused) {
+                                                        console.log("🔇 Toggle: Mute trap caught, forcing playback.");
+                                                        this.player.muted = true;
+                                                        this.player.play();
+                                                    }
+                                                }, 150);
+                                            }).catch(() => {
+                                                // Hard fallback
+                                                this.player.muted = true;
+                                                this.player.play();
+                                            });
+                                        }
+                                    }
+                                }
+                                break; 
+                            }
                             case 'chooser_opened': {
                                 // Pause video while file chooser is open; remember state so we can restore it
                                 if (this.player && !this.player.paused) {
@@ -2450,9 +2477,19 @@
         
         triggerImport: function() { sendOverlaySignal("import_video"); },
         openDoctor: function() { window.location.href = 'doctor.html'; },
-        updateVolumeBtn: function() { const btn = document.getElementById('btn-volume'); if(btn && this.player) { btn.innerText = "VOLUME: " + Math.round(this.player.volume * 100) + "%"; } },
-        toggleVolume: function() { if(!this.player) return; this.player.volume = this.player.volume > 0 ? 0 : 1; this.updateVolumeBtn(); },
-        adjustVolume: function(delta) { if(!this.player) return; this.player.volume = Math.min(1, Math.max(0, this.player.volume + delta)); this.updateVolumeBtn(); },
+        updateVolumeBtn: function() { const btn = document.getElementById('btn-volume'); if(btn && this.player) { btn.innerText = "VOLUME: " + (this.player.muted ? "0%" : Math.round(this.player.volume * 100) + "%"); } },
+        toggleVolume: function() { 
+            if(!this.player) return; 
+            this.player.muted = false; /* Force unmute */
+            this.player.volume = this.player.volume > 0 ? 0 : 1; 
+            this.updateVolumeBtn(); 
+        },
+        adjustVolume: function(delta) { 
+            if(!this.player) return; 
+            this.player.muted = false; /* Force unmute */
+            this.player.volume = Math.min(1, Math.max(0, this.player.volume + delta)); 
+            this.updateVolumeBtn(); 
+        },
         seek: function(seconds) { if (this.player) this.player.currentTime += seconds; },
         toggleBlackout: function() { const current = localStorage.getItem('hts_blackout') === 'true'; localStorage.setItem('hts_blackout', !current); const btn = document.getElementById('btn-blackout'); if(btn) btn.innerText = !current ? "BACKDROP: BLACK" : "BACKDROP: BLUR"; },
        toggleExitBtn: function() { 
