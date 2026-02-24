@@ -2057,60 +2057,76 @@
             }
         },
 
-
 handleVideoSelect: function(idx) {
             if (idx < 0 || idx >= this.mediaPool.length) idx = 0;
             this.activeIdx = idx;
             let item = this.mediaPool[idx];
             
-            // --- THE PORT SCRUBBER ---
+            // 1. Port Re-Sync Engine
             let finalUrl = item.url;
             if (finalUrl.startsWith('http://127.0.0.1:')) {
-                // Ignore saved port and grab the LIVE session port
                 const livePort = window.hts_current_port || localStorage.getItem('hts_server_port');
-                
                 if (livePort && livePort !== "0" && livePort !== "null") {
                     try {
                         const urlObj = new URL(finalUrl);
-                        urlObj.port = livePort; // Inject the LIVE port
+                        urlObj.port = livePort;
                         finalUrl = urlObj.toString();
-                        console.log("⚓ Port Scrubbed & Synced: " + livePort);
+                        console.log("⚓ Port Scrubbed: " + livePort);
                     } catch (e) { console.error("URL Scrub Error:", e); }
                 } else {
-                    // Handshake hasn't happened yet; wait 500ms and try again
-                    console.warn("⏳ Boot Block: Waiting for backend port...");
+                    console.warn("⏳ Waiting for port...");
                     setTimeout(() => this.handleVideoSelect(idx), 500);
                     return;
                 }
             }
 
-            console.log("🎬 Loading: " + item.name + " on " + finalUrl);
-
             if (this.player) {
-                // Physical Thread Reset: Flush previous error states
+                // 2. Physical Reset
                 this.player.pause();
                 this.player.src = "";
-                this.player.load();
-                
-                this.player.muted = true; // Required for WebKit autoplay
+                this.player.load(); 
+
+                // 3. Prep State
+                this.player.muted = true; 
                 this.player.src = finalUrl;
-                
-                const onPlaying = () => {
-                    this.player.removeEventListener('playing', onPlaying);
-                    this.player.muted = false; 
-                    setTimeout(() => {
-                        if (this.player.paused) {
-                            this.player.muted = true;
-                            this.player.play();
+
+                // 4. THE VISUAL PAINT LOGIC
+                if (item.protected) {
+                    // SMALL DEFAULT: Immediate Autoplay
+                    console.log("🚀 Default: Autoplay");
+                    this.player.play().then(() => {
+                        setTimeout(() => { this.player.muted = false; }, 150);
+                    }).catch(e => console.warn("Autoplay blocked."));
+                } else {
+                    // LARGE VAULT FILE: Load, Seek, and Paint Frame
+                    console.log("📦 Vault File: Rendering Resume Frame...");
+                    const saveKey = 'hts_pos_' + (item.id || item.name);
+                    const savedTime = parseFloat(localStorage.getItem(saveKey)) || 0;
+
+                    // This event fires when the browser has enough data to show a frame
+                    const onCanPlay = () => {
+                        if (savedTime > 0) {
+                            this.player.currentTime = savedTime;
                         }
-                    }, 150);
-                };
-                this.player.addEventListener('playing', onPlaying);
-                this.player.play().catch(e => console.error("Playback Thread Error:", e));
+                        // Briefly "kick" the player to force the decoder to paint the frame
+                        this.player.play().then(() => {
+                            this.player.pause();
+                            this.player.muted = false; 
+                        }).catch(() => {
+                            // Fallback if play() is strictly blocked
+                            this.player.currentTime = savedTime;
+                        });
+                        
+                        this.player.removeEventListener('canplay', onCanPlay);
+                    };
+
+                    this.player.addEventListener('canplay', onCanPlay);
+                }
             }
 
             localStorage.setItem('hts_active_idx', idx);
-            this.updateLCD(item.name.toUpperCase(), 'SYNCHRONIZING...');
+            const lcdStatus = item.protected ? 'AUTOPLAY...' : 'RESUME READY';
+            this.updateLCD(item.name.toUpperCase(), lcdStatus);
             this.renderSidePanel();
             this.updateVolumeBtn();
             this.broadcastList();

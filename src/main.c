@@ -47,6 +47,23 @@
 #define DATADIR "/app/bin"
 #endif
 
+/* ══════════════════════════════════════════════════════════════════
+ * HTS LOG CONTROL CENTER
+ * Set HTS_DEBUG to 1 for full terminal output, 0 for silent mode.
+ * The file log (hts_debug.log) is ALWAYS written regardless of this
+ * flag — only terminal/stdout output is silenced.
+ *
+ * SILENCED when HTS_DEBUG 0:
+ *   - log_debug()  — all BRIDGE, MHD, PAGE, CHOOSER, THEME, etc. msgs
+ *   - log_warn()   — ⚠ WARN lines
+ *   - log_error()  — ✖ ERROR lines
+ *
+ * ALWAYS printed (never silenced):
+ *   - print_hts()  — the HTS timestamp banner on startup
+ * ══════════════════════════════════════════════════════════════════ */
+#define HTS_DEBUG 1
+/* ══════════════════════════════════════════════════════════════════ */
+
 // --- GLOBALS ---
 static GtkWidget *clock_label = NULL, *hud_box = NULL, *exit_btn = NULL, *logo_image = NULL;
 static gboolean is_screensaver = FALSE;
@@ -146,7 +163,7 @@ void log_debug(const char *format, ...) {
         va_list args; va_start(args, format); vfprintf(debug_log, format, args); va_end(args);
         fprintf(debug_log, "\n"); fflush(debug_log);
     }
-    va_list args2; va_start(args2, format); vprintf(format, args2); va_end(args2); printf("\n"); fflush(stdout);
+    if (HTS_DEBUG) { va_list args2; va_start(args2, format); vprintf(format, args2); va_end(args2); printf("\n"); fflush(stdout); }
     g_mutex_unlock(&log_mutex);
 }
 
@@ -162,7 +179,7 @@ void log_warn(const char *format, ...) {
         va_list args; va_start(args, format); vfprintf(debug_log, format, args); va_end(args);
         fprintf(debug_log, "\n"); fflush(debug_log);
     }
-    printf("\xe2\x9a\xa0 WARN  | "); va_list args2; va_start(args2, format); vprintf(format, args2); va_end(args2); printf("\n"); fflush(stdout);
+    if (HTS_DEBUG) { printf("\xe2\x9a\xa0 WARN  | "); va_list args2; va_start(args2, format); vprintf(format, args2); va_end(args2); printf("\n"); fflush(stdout); }
     g_mutex_unlock(&log_mutex);
 }
 
@@ -178,7 +195,7 @@ void log_error(const char *format, ...) {
         va_list args; va_start(args, format); vfprintf(debug_log, format, args); va_end(args);
         fprintf(debug_log, "\n"); fflush(debug_log);
     }
-    printf("\xe2\x9c\x96 ERROR | "); va_list args2; va_start(args2, format); vprintf(format, args2); va_end(args2); printf("\n"); fflush(stdout);
+    if (HTS_DEBUG) { printf("\xe2\x9c\x96 ERROR | "); va_list args2; va_start(args2, format); vprintf(format, args2); va_end(args2); printf("\n"); fflush(stdout); }
     g_mutex_unlock(&log_mutex);
 }
 
@@ -636,6 +653,8 @@ static void thumb_task_done(GObject *src, GAsyncResult *res, gpointer data) {
 
 /* Returns a cached pixbuf immediately (NULL if not cached yet).
    If not cached, kicks off async ffmpeg and updates image_placeholder when done. */
+/* Returns a cached pixbuf immediately (NULL if not cached yet).
+   If not cached, kicks off async ffmpeg and updates image_placeholder when done. */
 static GdkPixbuf *make_thumbnail_or_async(const char *full_path, gboolean is_dir,
                                            GtkWidget *image_placeholder) {
     if (is_dir) {
@@ -649,6 +668,11 @@ static GdkPixbuf *make_thumbnail_or_async(const char *full_path, gboolean is_dir
             if (pb) return pb;
         }
         return NULL;
+    }
+
+    /* DIRECT IMAGE LOAD: Bypass FFmpeg for image files to ensure instant rendering */
+    if (is_image_file(full_path)) {
+        return gdk_pixbuf_new_from_file_at_scale(full_path, 160, 160, FALSE, NULL);
     }
 
     char *thumb = thumb_cache_path(full_path);
@@ -751,8 +775,8 @@ static void hts_chooser_scan_directory(HTSFileChooser *c, const char *path) {
 
         if ((c->mode == CHOOSER_MODE_VIDEO || c->mode == CHOOSER_MODE_DOCTOR) && (!is_dir && !is_video_file(name))) { g_free(full); continue; }
         if (c->mode == CHOOSER_MODE_SCREENSAVER && (!is_dir || (!is_screensaver_folder(full) && strcmp(c->current_path, c->root_path) != 0))) { g_free(full); continue; }
-        if (c->mode == CHOOSER_MODE_THEME && (is_dir || !is_html_file(name))) { g_free(full); continue; }
-        if (c->mode == CHOOSER_MODE_FACEPLATE && (is_dir || !is_image_file(name))) { g_free(full); continue; }
+        if (c->mode == CHOOSER_MODE_THEME && (!is_dir && !is_html_file(name))) { g_free(full); continue; }
+        if (c->mode == CHOOSER_MODE_FACEPLATE && (!is_dir && !is_image_file(name))) { g_free(full); continue; }
 
         /* Card — fixed square so flowbox wraps into a true grid */
         GtkWidget *card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -830,21 +854,15 @@ static void open_hts_custom_chooser(GtkWidget *parent_widget, WebKitWebView *wv,
     c->webview_target = wv;
     c->mode = mode;
 
-    /* Jail root — each mode gets its own sensible starting directory */
-    if (mode == CHOOSER_MODE_SCREENSAVER)
+    /* Jail root — strict anchor enforcement */
+    if (mode == CHOOSER_MODE_SCREENSAVER) {
+        /* System screensavers stay in the read-only app container */
         c->root_path = g_build_filename(DATADIR, "data", "screensavers", NULL);
-    else if (mode == CHOOSER_MODE_THEME)
-        c->root_path = g_build_filename(g_get_home_dir(), NULL); /* user picks from home */
-    else if (mode == CHOOSER_MODE_FACEPLATE)
-        c->root_path = g_build_filename(g_get_home_dir(), "Pictures", NULL);
-    else {
+    } else {
+        /* Universal Routing: Videos, Faceplates, and Themes all funnel through the Videos directory */
         const char *v_dir = g_get_user_special_dir(G_USER_DIRECTORY_VIDEOS);
-        c->root_path = g_strdup(v_dir ? v_dir : g_get_home_dir());
-    }
-    /* Fallback: if root doesn't exist, use home */
-    if (!g_file_test(c->root_path, G_FILE_TEST_IS_DIR)) {
-        g_free(c->root_path);
-        c->root_path = g_strdup(g_get_home_dir());
+        c->root_path = g_strdup(v_dir ? v_dir : g_build_filename(g_get_home_dir(), "Videos", NULL));
+        g_mkdir_with_parents(c->root_path, 0755); /* Force creation to prevent jailbreak */
     }
 
     const char *title = (mode == CHOOSER_MODE_DOCTOR)    ? "HTS MEDIA DOCTOR"
@@ -1394,22 +1412,57 @@ static void activate(GtkApplication *app, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
+    /* 1. ALWAYS print the HTS timestamp — even in CLI-only mode */
+    print_hts();
+
+    /* 2. Scan our own flags BEFORE GTK sees argv.
+     *    GTK does not know about --gui and will error on unknown options.
+     *    We check for our flags here, then strip --gui out so GTK never
+     *    encounters it. --screensaver is kept in argv because nothing
+     *    inside GTK/GApplication will choke on an unrecognised flag when
+     *    G_APPLICATION_DEFAULT_FLAGS is used — but we strip it too for
+     *    cleanliness and re-set is_screensaver ourselves. */
+    gboolean launch_gui = FALSE;
+
+    /* Build a clean argv with --gui and --screensaver removed */
+    int clean_argc = 0;
+    char **clean_argv = g_new0(char *, argc + 1);
+    clean_argv[clean_argc++] = argv[0]; /* always keep argv[0] (program name) */
+
+    for (int i = 1; i < argc; i++) {
+        if (g_strcmp0(argv[i], "--gui") == 0) {
+            launch_gui = TRUE;          /* flag seen — do NOT forward to GTK */
+        } else if (g_strcmp0(argv[i], "--screensaver") == 0) {
+            launch_gui = TRUE;
+            is_screensaver = TRUE;      /* set global — do NOT forward to GTK */
+        } else {
+            clean_argv[clean_argc++] = argv[i]; /* forward anything else */
+        }
+    }
+
+    /* 3. CLI mode — timestamp already printed above, just exit */
+    if (!launch_gui) {
+        g_free(clean_argv);
+        return 0;
+    }
+
+    /* 4. GUI LAUNCH — only reached when --gui or --screensaver was passed */
     char *log_path = g_build_filename(g_get_user_data_dir(), "hts_debug.log", NULL);
     g_mkdir_with_parents(g_get_user_data_dir(), 0755);
     debug_log = fopen(log_path, "a");
     g_free(log_path);
     if (debug_log) { fprintf(debug_log, "\n========================================\n=== HTS SESSION START ===\n========================================\n"); fflush(debug_log); }
     session_start_time = time(NULL);
-    print_hts(); 
     g_mutex_init(&copy_mutex);
     g_mutex_init(&log_mutex);
-    for (int i = 1; i < argc; i++) if (g_strcmp0(argv[i], "--screensaver") == 0) is_screensaver = TRUE;
+
     GtkApplication *app = gtk_application_new("com.storcke64.hts_time", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
-    int status = g_application_run(G_APPLICATION(app), argc, argv);
-    g_object_unref(app); 
+    int status = g_application_run(G_APPLICATION(app), clean_argc, clean_argv);
+    g_object_unref(app);
+    g_free(clean_argv);
     g_mutex_clear(&copy_mutex);
-    g_mutex_clear(&log_mutex); 
+    g_mutex_clear(&log_mutex);
     if (debug_log) fclose(debug_log);
     return status;
 }

@@ -284,8 +284,6 @@
     </div>
 </div>
 
-<!-- File input replaced with HTS Smart Chooser -->
-
 <script>
     // --- OVERLAY SIGNAL BRIDGE ---
     function sendOverlaySignal(command) {
@@ -301,11 +299,6 @@
     let timerInterval = null;
     let audioCtx = null;
 
-/**
-     * EXAMINE FILE: Precision Diagnostic Engine with 30s High-Persistence Watchdog.
-     * Hardened to catch "Late Stalls" and provide immediate in-line justifications.
-     * Explicitly locks diagnosis until stability is verified over a 30-second observation.
-     */
     // Smart Chooser Integration
     function openSmartChooser() {
         if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.hts_browser_sync) {
@@ -334,7 +327,6 @@
             const pctEl   = document.getElementById('imp-pct');
             const nameEl  = document.getElementById('imp-name');
             if (d.done) {
-                // Animate to 100% and stay — doctor page keeps bar visible permanently
                 if (fill)  { fill.style.transition = 'width 0.8s ease'; fill.style.width = '100%'; }
                 if (pctEl) pctEl.innerText = '100%';
                 if (overlay) overlay.style.display = 'block';
@@ -377,15 +369,13 @@
     function examineVideoUrl(url, filename) {
         console.log('🔬 examineVideoUrl called:', {url, filename});
 
-        // Resolve hts:// if needed
         const streamUrl = htsToHttp(url);
-
         const preview = document.getElementById('preview-vid');
         const fileName = filename.toLowerCase();
         const isWebm = fileName.endsWith('.webm');
         const isMp4 = fileName.endsWith('.mp4');
 
-        // Reset all vitals to failed with default justifications
+        // Reset all vitals
         const defaultLabels = {
             'prop-container': 'Container: WebM (.webm)',
             'prop-vcodec': 'Video Codec: VP9',
@@ -429,19 +419,17 @@
             setReason('prop-container', 'Container: WebM (.webm)', '(Unsupported extension. Only MP4/WebM admitted.)');
         }
 
-        // Set up video stream via microhttpd
+        // Set up video stream
         preview.src = streamUrl;
         preview.muted = true;
         preview.style.display = 'block';
         document.getElementById('preview-fail').style.display = 'none';
 
-        // Reset mute button to loading state
         const muteBtn = document.getElementById('mute-btn');
         muteBtn.innerText = 'CHECKING AUDIO...';
         muteBtn.style.background = '#333';
         muteBtn.disabled = true;
 
-        // Detect audio track presence after metadata loads
         preview.onloadedmetadata = function() {
             const hasAudio = preview.mozHasAudio !== undefined ? preview.mozHasAudio :
                              (preview.webkitAudioDecodedByteCount !== undefined ? preview.webkitAudioDecodedByteCount > 0 :
@@ -451,7 +439,6 @@
                 muteBtn.style.background = '#555';
                 muteBtn.disabled = true;
             } else {
-                // Audio confirmed — auto-unmute immediately so doctor hears the patient
                 preview.muted = false;
                 muteBtn.innerText = 'MUTE VIDEO';
                 muteBtn.style.background = '#2c3e50';
@@ -466,13 +453,11 @@
             <span style="color:var(--medical-blue); font-weight:bold;">DIAGNOSIS: PERFORMING HIGH-PERSISTENCE STREAM EXAM (30S)...</span>
         `;
 
-        // Generate prescription
         const safeName = filename.replace(/\s+/g, '_');
         const outputName = safeName.split('.').slice(0, -1).join('.') + '_HTS_READY.webm';
         document.getElementById('cmd-text').innerText =
             `ffmpeg -err_detect ignore_err -i "${filename}" -c:v libvpx-vp9 -pix_fmt yuv420p -profile:v 0 -crf 30 -b:v 0 -c:a libopus -ar 48000 -ac 2 "${outputName}"`;
 
-        // 30-second high-persistence watchdog on the HTTP stream
         preview.play().then(() => {
             const startTime = preview.currentTime;
             setTimeout(() => {
@@ -483,7 +468,6 @@
                         <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: LATE STALL DETECTED. SURGERY MANDATORY.</span>
                     `;
                 } else {
-                    // Healthy — downgrade suspects to orange warnings
                     ['prop-vprofile', 'prop-pixfmt'].forEach(id => {
                         const el = document.getElementById(id);
                         if (el && el.className.includes('failed')) {
@@ -497,8 +481,6 @@
                         PATIENT: ${filename}<br>
                         <span style="color:#ffa500; font-weight:bold;">DIAGNOSIS: NOT OPTIMAL, BUT GOOD ENOUGH TO PLAY.</span>
                     `;
-                    // Stream confirmed healthy — auto-unmute so doctor can hear audio
-                    const muteBtn = document.getElementById('mute-btn');
                     if (muteBtn && !muteBtn.disabled) {
                         preview.muted = false;
                         muteBtn.innerText = 'MUTE VIDEO';
@@ -517,150 +499,6 @@
         });
     }
 
-    // Legacy file input handler (kept for compatibility if needed)
-    function examineFile(input) {
-        const file = input.files[0];
-        if (!file) return;
-
-        // 1. Reset Vitals & Clinical Labels
-        if (typeof stopTimer === "function") stopTimer();
-        const rows = document.querySelectorAll('.check-row');
-        const defaultLabels = {
-            'prop-container': 'Container: WebM (.webm)',
-            'prop-vcodec': 'Video Codec: VP9',
-            'prop-vprofile': 'Video Profile: 0 (8-bit)',
-            'prop-acodec': 'Audio Codec: Opus',
-            'prop-achannels': 'Audio Channels: Stereo (2.0)',
-            'prop-pixfmt': 'Pixel Format: YUV420P',
-            'prop-res': 'Resolution: ≤ 3840x2160',
-            'prop-fps': 'Frame Rate: Constant (CFR)',
-            'prop-streams': 'Stream Count: 1 Video / 1 Audio',
-            'prop-drm': 'Encryption: None (Clear)'
-        };
-
-        rows.forEach(r => {
-            r.className = 'check-row failed'; 
-            r.style.borderLeft = ""; 
-            const mark = r.querySelector('.status-mark');
-            if (mark) mark.innerHTML = '✕';
-            const labelDiv = r.querySelector('div:nth-child(2)');
-            if (labelDiv && defaultLabels[r.id]) labelDiv.innerText = defaultLabels[r.id];
-        });
-
-        // Apply Immediate Justifications for Suspected Culprits
-        setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(Suspected high bit-depth: Possible black screen.)');
-        setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(Suspected chroma subsampling mismatch.)');
-
-        const fileName = file.name.toLowerCase();
-        const isWebm = fileName.endsWith('.webm');
-        const isMp4 = fileName.endsWith('.mp4');
-        
-        // 2. DNA Probing
-        if (isWebm || isMp4) {
-            setPass('prop-container');
-            const hasVP9 = fileName.includes('vp9') || isWebm;
-            if (hasVP9) {
-                if (isMp4) {
-                    setReason('prop-vcodec', 'Video Codec: VP9', '(VP9 DNA inside MP4 wrapper. Consider renaming.)');
-                } else {
-                    setPass('prop-vcodec');
-                }
-            } else {
-                setReason('prop-vcodec', 'Video Codec: VP9', '(Non-native codec detected: HEVC/x264 likely.)');
-            }
-            const safeVitals = ['prop-acodec', 'prop-achannels', 'prop-res', 'prop-fps', 'prop-streams', 'prop-drm'];
-            safeVitals.forEach(id => setPass(id));
-        } else {
-            setReason('prop-container', 'Container: WebM (.webm)', '(Unsupported extension. Only MP4/WebM admitted.)');
-        }
-
-        // 3. Render Test & High-Persistence Watchdog
-        const preview = document.getElementById('preview-vid');
-        if (preview) {
-            const url = URL.createObjectURL(file);
-            preview.src = url;
-            preview.style.display = 'block';
-            document.getElementById('preview-fail').style.display = 'none';
-            
-            // --- FIX FOR VIDEO PREVIEW ---
-            preview.muted = true; // Required for autoplay logic in modern browsers
-            preview.load();       // Ensure fresh load
-            
-            // Immediate Status: Informed 30s Wait
-            document.getElementById('diag-text').innerHTML = `
-                PATIENT: ${file.name}<br>
-                <span style="color:var(--medical-blue); font-weight:bold;">DIAGNOSIS: PERFORMING HIGH-PERSISTENCE EXAM (30S)...</span>
-            `;
-
-            preview.play().then(() => {
-                const startTime = preview.currentTime;
-                
-                // HIGH-PERSISTENCE WATCHDOG: 30 seconds
-                setTimeout(() => {
-                    if (preview.currentTime <= startTime + 0.5 || preview.paused) {
-                        // STALL DETECTED
-                        setReason('prop-fps', 'Frame Rate: Constant (CFR)', '(CRITICAL STALL: Stream frozen during 30s persistence test.)', 'var(--error-red)');
-                        document.getElementById('diag-text').innerHTML = `
-                            PATIENT: ${file.name}<br>
-                            <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: LATE STALL DETECTED. SURGERY MANDATORY.</span>
-                        `;
-                    } else {
-                        // Healthy Playback verified after 30 seconds
-                        const suspects = [
-                            {id: 'prop-vprofile', label: 'Video Profile: 0 (8-bit)', reason: '(Non-optimal: High bit-depth detected.)'},
-                            {id: 'prop-pixfmt', label: 'Pixel Format: YUV420P', reason: '(Non-optimal: High chroma subsampling.)'}
-                        ];
-                        suspects.forEach(item => {
-                            const el = document.getElementById(item.id);
-                            if (el && el.className.includes('failed')) {
-                                el.style.borderLeft = "6px solid orange";
-                                el.querySelector('.status-mark').innerHTML = '<span style="color:orange">!</span>';
-                                setReason(item.id, item.label, item.reason, 'orange');
-                            }
-                        });
-                        document.getElementById('diag-text').innerHTML = `
-                            PATIENT: ${file.name}<br>
-                            <span style="color:#ffa500; font-weight:bold;">DIAGNOSIS: NOT OPTIMAL, BUT GOOD ENOUGH TO PLAY.</span>
-                        `;
-                    }
-                    // Stream confirmed healthy — auto-unmute so doctor can hear audio
-                    const muteBtn = document.getElementById('mute-btn');
-                    if (muteBtn && !muteBtn.disabled) {
-                        preview.muted = false;
-                        muteBtn.innerText = 'MUTE VIDEO';
-                        muteBtn.style.background = '#2c3e50';
-                    }
-                }, 30000); 
-            }).catch(e => {
-                // FAILURE: Video remains black
-                setReason('prop-vprofile', 'Video Profile: 0 (8-bit)', '(CRITICAL: Browser cannot render this profile.)');
-                setReason('prop-pixfmt', 'Pixel Format: YUV420P', '(CRITICAL: Browser cannot map this pixel format.)');
-                
-                document.getElementById('diag-text').innerHTML = `
-                    PATIENT: ${file.name}<br>
-                    <span style="color:var(--error-red); font-weight:bold;">DIAGNOSIS: CRITICAL DNA FAILURE. SURGERY REQUIRED.</span>
-                `;
-            });
-        }
-
-        // 4. Prescription Logic (Includes 44:08 bypass)
-        const safeName = file.name.replace(/\s+/g, '_');
-        const outputName = safeName.split('.').slice(0, -1).join('.') + "_HTS_READY.webm";
-        document.getElementById('cmd-text').innerText = `ffmpeg -err_detect ignore_err -i "${file.name}" -c:v libvpx-vp9 -pix_fmt yuv420p -profile:v 0 -crf 30 -b:v 0 -c:a libopus -ar 48000 -ac 2 "${outputName}"`;
-        
-        function setReason(id, label, reason, color = 'var(--error-red)') {
-            const el = document.getElementById(id);
-            if (el) {
-                el.querySelector('div:nth-child(2)').innerHTML = 
-                    `${label} <span style="color:${color}; font-size:11px; margin-left:10px; font-style:italic;">${reason}</span>`;
-            }
-        }
-    } // --- EXAMINE FILE ENDS HERE ---
-
-    /**
-     * HELPER: setPass
-     * Updates UI state to green for a passing vital.
-     */
     function setPass(id) {
         const el = document.getElementById(id);
         if (el) {
@@ -707,58 +545,46 @@
         updateTimerDisplay();
     }
 
-        /* --- The Storcke Human Time System- By Antonio Storcke. --- */
+    function triggerAlarm() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        audioCtx.resume().then(() => {
+            const playFunkyChirp = (freq, start, type = 'triangle') => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(freq, start);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, start + 0.15);
+                gain.gain.setValueAtTime(0.1, start);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+                osc.start(start);
+                osc.stop(start + 0.2);
+            };
 
-
-        // --- DOCTOR AUDIO SYSTEM ---
-        /* --- The Storcke Human Time System- By Antonio Storcke. --- */
-
-        function triggerAlarm() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
             
-            audioCtx.resume().then(() => {
-                const playFunkyChirp = (freq, start, type = 'triangle') => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = type;
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.frequency.setValueAtTime(freq, start);
-                    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, start + 0.15);
-                    gain.gain.setValueAtTime(0.1, start);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
-                    osc.start(start);
-                    osc.stop(start + 0.2);
-                };
+            playFunkyChirp(440, now, 'triangle');        
+            playFunkyChirp(880, now + 0.1, 'square');    
+            playFunkyChirp(1320, now + 0.2, 'square');   
+            playFunkyChirp(660, now + 0.35, 'triangle'); 
 
-                const now = audioCtx.currentTime;
-                
-                // HTS Funky Riff
-                playFunkyChirp(440, now, 'triangle');        
-                playFunkyChirp(880, now + 0.1, 'square');    
-                playFunkyChirp(1320, now + 0.2, 'square');   
-                playFunkyChirp(660, now + 0.35, 'triangle'); 
+            setTimeout(() => {
+                alert("HTS DOCTOR: RECOVERY PERIOD ELAPSED. CHECK TERMINAL OUTPUT.");
+            }, 600);
+        });
+    }
 
-                setTimeout(() => {
-                    alert("HTS DOCTOR: RECOVERY PERIOD ELAPSED. CHECK TERMINAL OUTPUT.");
-                }, 600);
-            });
-        } // === End of triggerAlarm Function ===
-
-        function toggleDoctorVideoMute() {
-            const docVideo = document.getElementById('preview-vid');
-            const btn = document.getElementById('mute-btn');
-            if (docVideo && !btn.disabled) {
-                docVideo.muted = !docVideo.muted;
-                // muted=true means sound is off → offer to unmute (red)
-                // muted=false means sound is on → offer to mute (dark)
-                btn.innerText = docVideo.muted ? 'UNMUTE VIDEO' : 'MUTE VIDEO';
-                btn.style.background = docVideo.muted ? '#641e16' : '#2c3e50';
-            }
-        } // === End of toggleDoctorVideoMute Function ===
-
-/* --- The Storcke Human Time System- By Antonio Storcke. --- */
-/* --- The Storcke Human Time System- By Antonio Storcke. --- */
+    function toggleDoctorVideoMute() {
+        const docVideo = document.getElementById('preview-vid');
+        const btn = document.getElementById('mute-btn');
+        if (docVideo && !btn.disabled) {
+            docVideo.muted = !docVideo.muted;
+            btn.innerText = docVideo.muted ? 'UNMUTE VIDEO' : 'MUTE VIDEO';
+            btn.style.background = docVideo.muted ? '#641e16' : '#2c3e50';
+        }
+    }
 
     function copyPrescription() {
         const cmd = document.getElementById('cmd-text').innerText;
@@ -769,11 +595,23 @@
 
     function exitClinic() {
         stopTimer();
-        // RESTORE OVERLAY BEFORE LEAVING
         sendOverlaySignal("overlay_show");
         window.location.href = 'screensaver.html';
     }
-</script>
 
+    // GLOBAL VOLUME HOTKEYS FOR DOCTOR PAGE
+    window.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            const vid = document.getElementById('preview-vid') || document.querySelector('video');
+            if (vid) {
+                e.preventDefault();
+                vid.volume = Math.min(1, Math.max(0, vid.volume + (e.key === 'ArrowUp' ? 0.1 : -0.1)));
+                console.log("Volume Adjusted: " + Math.round(vid.volume * 100) + "%");
+            }
+        }
+    });
+</script>
 </body>
 </html>
