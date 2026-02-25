@@ -99,6 +99,20 @@
             "build-commands": [
                 "mkdir -p /app/lib/ffmpeg"
             ]
+        },
+        {
+            "name": "flathub-metadata",
+            "buildsystem": "simple",
+            "build-commands": [
+                "install -D -m 644 com.storcke64.hts_time.metainfo.xml /app/share/metainfo/com.storcke64.hts_time.metainfo.xml",
+                "install -D -m 644 com.storcke64.hts_time.desktop /app/share/applications/com.storcke64.hts_time.desktop"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "."
+                }
+            ]
         }
     ]
 }

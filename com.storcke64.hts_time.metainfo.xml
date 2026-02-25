@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.storcke64.hts_time</id>
+  
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  
+  <name>Human Time System</name>
+  <summary>An infinite, cyclical calendar designed for deep time</summary>
+  
+  <description>
+    <p>
+      The Storcke Human Time System (HTS) is a revolutionary, epoch-based calendar architecture built to outlast human civilization. Starting at A0 (40,000 years pre-2023), it utilizes 50,000-year Epochs represented by the Latin alphabet, eliminating traditional calendar bugs and timezone complexities through pure integer math.
+    </p>
+    <p>
+      Features include:
+    </p>
+    <ul>
+      <li>Drop-in integration for standard Linux time commands via the hts-time CLI.</li>
+      <li>A comprehensive GUI dashboard for converters, timezones, and system status.</li>
+      <li>Deep-time integer math ideal for gaming, simulations, and long-term archival.</li>
+    </ul>
+  </description>
+  
+  <developer_name>Antonio Storcke</developer_name>
+  
+  <url type="homepage">https://github.com/storcke64/hts-time</url>
+  <url type="bugtracker">https://github.com/storcke64/hts-time/issues</url>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>The Human Time System universal dashboard</caption>
+      <image>https://raw.githubusercontent.com/storcke64/hts-time/main/screenshot1.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Convert traditional Gregorian dates to HTS Epochs</caption>
+      <image>https://raw.githubusercontent.com/storcke64/hts-time/main/screenshot2.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Monitor HTS system integrations and latency</caption>
+      <image>https://raw.githubusercontent.com/storcke64/hts-time/main/screenshot3.png</image>
+    </screenshot>
+  </screenshots>
+  
+  <releases>
+    <release version="2.11" date="2026-02-25"/>
+  </releases>
+  
+  <content_rating type="oars-1.1"/>
+</component>

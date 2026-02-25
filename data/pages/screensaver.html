@@ -25,8 +25,17 @@
         #import-overlay .imp-track { background: #111; border: 1px solid #0ff; height: 12px; width: 100%; position: relative; }
         #import-overlay .imp-fill  { background: #0ff; height: 100%; width: 0%; transition: width 0.5s linear; }
         #import-overlay .imp-pct   { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 9px; font-family: monospace; color: #000; line-height: 12px; font-weight: bold; }
-    </style>
-    <style>
+
+        /* --- AUTO-HIDE SCREENSAVER UI --- */
+        body.idle {
+            cursor: none !important;
+        }
+
+        body.idle .nav-bar {
+            opacity: 0;
+            pointer-events: none;
+        }
+
         /* GTK corner logo sized in C via gtk_image_set_pixel_size(100) — no CSS needed */
         /* Vault panel logo is independently controlled via .vault-logo-panel img */
         
@@ -69,7 +78,7 @@
             border-bottom: 1px solid #1a1a1a; 
             z-index: 2000; 
             flex-shrink: 0; 
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, opacity 0.5s ease-in-out;
         }
 
         .tab-link { 
@@ -1005,6 +1014,53 @@
         }
     }
 
+    // --- IDLE TIMER AUTO-HIDE LOGIC ---
+    let htsIdleTimer;
+    let htsIsIdle = false;
+
+    function resetHtsIdleTimer() {
+        clearTimeout(htsIdleTimer);
+        
+        // Wake up native GTK button unless in Cinema/Screensaver mode
+        if (htsIsIdle) {
+            htsIsIdle = false;
+            document.body.classList.remove('idle');
+            
+            const isCinemaActive = window.CinemaModule && window.CinemaModule.active;
+            const isLockActive = window.LockModule && window.LockModule.isLocked;
+            const isExitHiddenSetting = localStorage.getItem('hts_cinema_exit') === 'false';
+            
+            // Only restore exit button if NOT in screensaver/cinema mode
+            // (When in cinema mode, only show it if the user hasn't hidden it)
+            if (!isCinemaActive && !isLockActive) {
+                sendOverlaySignal('set_exit_btn|1');
+            } else if (isCinemaActive && !isExitHiddenSetting) {
+                sendOverlaySignal('set_exit_btn|1');
+            }
+        }
+
+        const hudGeneral = document.getElementById('hud-general');
+        const hudVault = document.getElementById('hud-vault');
+        const isMenuOpen = (hudGeneral && hudGeneral.style.display === 'flex') || (hudVault && hudVault.style.display === 'flex');
+        
+        if (!isMenuOpen) {
+            htsIdleTimer = setTimeout(() => {
+                htsIsIdle = true;
+                document.body.classList.add('idle');
+                // DIRECTLY HIDE NATIVE GTK OVERLAY BUTTON
+                sendOverlaySignal('set_exit_btn|0'); 
+            }, 3000); 
+        }
+    }
+    
+    // Attach event listeners for mouse and keyboard movement
+    window.addEventListener('load', resetHtsIdleTimer);
+    document.addEventListener('mousemove', resetHtsIdleTimer);
+    document.addEventListener('keypress', resetHtsIdleTimer);
+    document.addEventListener('mousedown', resetHtsIdleTimer);
+    document.addEventListener('touchstart', resetHtsIdleTimer);
+
+
     let activeThemeID = "default";
     let lockedThemeHeight = 300; 
 
@@ -1084,6 +1140,7 @@
                     window.VideoModule.player.play().catch(() => {});
                 }
                 sendOverlaySignal('overlay_show');
+                resetHtsIdleTimer(); // Wake up UI on close
             } else {
                 if(window.VideoModule) window.VideoModule.toggleMenu(false);
                 hud.style.display = 'flex';
@@ -1093,6 +1150,7 @@
                     window.VideoModule.player.pause();
                 }
                 sendOverlaySignal('overlay_hide');
+                resetHtsIdleTimer(); // Keep UI awake while menu is open
             }
         },
         
@@ -1334,6 +1392,7 @@
                         });
                         
                         window.addEventListener('click', function(e) { window.parent.postMessage({ type: 'HTS_CMD', action: 'wake_up' }, '*'); });
+                        window.addEventListener('mousemove', function(e) { window.parent.postMessage({ type: 'HTS_CMD', action: 'wake_up' }, '*'); });
 
                         window.addEventListener('message', function(e) {
                             const msg = e.data;
@@ -1413,6 +1472,7 @@
     // --- MODULE 2: SECURE SCREENSAVER ---
     const LockModule = {
         isLocked: false, 
+        engagedAt: 0,
         userPin: localStorage.getItem('hts_pin') || "1234", 
         autoDismissTimer: null,
         init: function() {
@@ -1434,12 +1494,15 @@
         },
         detectInteraction: function(e) {
             if (!this.isLocked || document.getElementById('lock-overlay').style.display === 'flex') return;
+            if (Date.now() - this.engagedAt < 800) return; // ignore events right after engage
             if (e.type === 'keydown' || e.type === 'click') this.showPrompt();
         },
         engage: function() {
             if (window.CinemaModule && window.CinemaModule.active) window.CinemaModule.exit();
             this.isLocked = true;
+            this.engagedAt = Date.now();
             sendOverlaySignal("overlay_hide");
+            sendOverlaySignal("set_exit_btn|0");
             document.getElementById('main-nav').style.transform = 'translateY(-100px)';
             document.getElementById('dash-panel').style.height = '0px';
             document.getElementById('viewscreen-hero').style.bottom = '0px';
@@ -1510,6 +1573,7 @@
         unlock: function() {
             this.isLocked = false;
             sendOverlaySignal("overlay_show");
+            sendOverlaySignal("set_exit_btn|1");
             this.disengagePrompt();
             document.getElementById('interaction-layer').style.display = 'none';
             const viewer = document.getElementById('html-saver-frame');
@@ -2018,7 +2082,11 @@
                                 }
                                 break; 
                             }
-                            case 'wake_up': if (window.LockModule && window.LockModule.isLocked) window.LockModule.showPrompt(); if (window.CinemaModule && window.CinemaModule.active) window.CinemaModule.exit(); break;
+                            case 'wake_up': 
+                                resetHtsIdleTimer(); // INSTANT WAKE UP
+                                if (window.LockModule && window.LockModule.isLocked && (Date.now() - window.LockModule.engagedAt >= 800)) window.LockModule.showPrompt(); 
+                                if (window.CinemaModule && window.CinemaModule.active) window.CinemaModule.exit(); 
+                                break;
                             case 'delete_active': this.deleteVideo(this.activeIdx); break;
                             case 'set_favorite': {
                                 const fi = (e.data.data !== undefined && e.data.data !== null)
@@ -2219,14 +2287,14 @@
         },
         seek: function(seconds) { if (this.player) this.player.currentTime += seconds; },
         toggleBlackout: function() { const current = localStorage.getItem('hts_blackout') === 'true'; localStorage.setItem('hts_blackout', !current); const btn = document.getElementById('btn-blackout'); if(btn) btn.innerText = !current ? "BACKDROP: BLACK" : "BACKDROP: BLUR"; },
-       toggleExitBtn: function() { 
+        toggleExitBtn: function() { 
             const current = localStorage.getItem('hts_cinema_exit') !== 'false'; 
             const newState = !current; 
             localStorage.setItem('hts_cinema_exit', newState); 
             const btn = document.getElementById('btn-exit-toggle'); 
             if(btn) btn.innerText = newState ? "CINEMA EXIT BTN: VISIBLE" : "CINEMA EXIT BTN: HIDDEN"; 
         },
-     startHeartbeat: function() {
+      startHeartbeat: function() {
             if (this._heartbeatInterval) clearInterval(this._heartbeatInterval);
             setTimeout(() => {
                 this._heartbeatInterval = setInterval(() => {
@@ -2264,12 +2332,14 @@
                     this.player.pause();
                 }
                 sendOverlaySignal('overlay_hide');
+                resetHtsIdleTimer(); // Keep UI awake while menu is open
             } else {
                 if (this.player && this.player._pausedBySettings) {
                     this.player._pausedBySettings = false;
                     this.player.play().catch(() => {});
                 }
                 sendOverlaySignal('overlay_show');
+                resetHtsIdleTimer(); // Let idle timer resume
             }
         },
     };

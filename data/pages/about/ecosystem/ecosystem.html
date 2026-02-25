@@ -5,103 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HTS // ECOSYSTEM</title>
     <style>
-        body {
-            background-color: #000;
-            color: #ccc;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        :root { 
+            --neon-blue: #00d4ff; 
+            --neon-purple: #bd00ff; 
+            --bg-obsidian: #0a0a0a; 
+            --neon-glow: rgba(189, 0, 255, 0.4);
+        }
+
+        body { 
+            background-color: var(--bg-obsidian); color: white; 
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
             overflow: hidden;
         }
 
-        /* --- THEME COLOR: NEON PURPLE --- */
-        :root { --accent: #bd00ff; }
+        /* --- UNIFIED NAV (Matches features.html, correct ../../ paths) --- */
+        .nav-bar { 
+            width: 100%; background: #111; display: flex; justify-content: center; 
+            gap: 25px; padding: 20px 0; border-bottom: 1px solid #1a1a1a; 
+            flex-shrink: 0; z-index: 100;
+        }
+        .tab-link { 
+            color: #444; font-weight: bold; font-size: 11px; text-decoration: none;
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .tab-link:hover { color: #888; }
+        .tab-link.active { color: var(--neon-purple); text-shadow: 0 0 10px var(--neon-glow); }
 
-        .container {
-            width: 90%;
-            max-width: 900px;
-            height: 90vh;
-            border: 2px solid #333;
-            border-top: 10px solid var(--accent);
-            background: rgba(10, 10, 10, 0.95);
-            padding: 40px;
-            position: relative;
-            box-shadow: 0 0 50px rgba(189, 0, 255, 0.15);
-            display: flex;
-            flex-direction: column;
+        /* --- CONTENT VIEWPORT --- */
+        #content-viewport {
+            width: 100%;
+            height: calc(100vh - 65px); 
             overflow-y: auto;
+            background: var(--bg-obsidian);
         }
 
-        /* SCROLLBAR HIDING */
-        .container::-webkit-scrollbar { width: 5px; }
-        .container::-webkit-scrollbar-thumb { background: var(--accent); }
-        .container::-webkit-scrollbar-track { background: #111; }
+        #content-viewport::-webkit-scrollbar { width: 6px; }
+        #content-viewport::-webkit-scrollbar-thumb { background: var(--neon-purple); }
+        #content-viewport::-webkit-scrollbar-track { background: #111; }
 
-        h1 {
-            font-family: 'Courier New', monospace;
-            color: var(--accent);
-            font-size: 32px;
-            margin: 0 0 5px 0;
+        .page-content-scroll { padding: 60px 40px; max-width: 900px; margin: 0 auto; width: 90%; }
+        
+        .neon-h1 { 
+            color: var(--neon-purple); 
+            text-shadow: 0 0 15px var(--neon-glow); 
+            font-size: 3rem; 
+            margin-bottom: 10px; 
+            margin-top: 0;
+            text-align: center;
             letter-spacing: 5px;
             text-transform: uppercase;
-            text-shadow: 0 0 15px var(--accent);
         }
 
-        .subtitle {
+        .page-subtitle {
+            text-align: center;
             font-family: 'Courier New', monospace;
             color: #666;
+            letter-spacing: 4px;
             font-size: 12px;
-            margin-bottom: 30px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            display: block;
+            margin-bottom: 50px;
         }
 
-        .section-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+        /* --- PREMIUM MODULE CARDS --- */
+        .module-card {
+            background: rgba(20, 20, 20, 0.4);
+            border: 1px solid #222;
+            border-left: 3px solid var(--neon-purple);
+            padding: 35px;
             margin-bottom: 30px;
+            border-radius: 4px;
+            transition: 0.3s;
         }
 
-        .info-block h3 {
+        .module-card:hover {
+            background: rgba(30, 30, 30, 0.6);
+            border-color: #444;
+            border-left-color: var(--neon-purple);
+            box-shadow: 0 10px 30px rgba(189, 0, 255, 0.08);
+        }
+
+        .module-title {
             color: white;
-            font-family: 'Segoe UI', sans-serif;
+            font-size: 1.4rem;
             text-transform: uppercase;
             letter-spacing: 2px;
-            border-left: 4px solid var(--accent);
-            padding-left: 10px;
             margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
-        .info-block p {
-            font-size: 14px;
-            line-height: 1.6;
+        .module-icon { font-size: 1.8rem; }
+
+        .module-text {
+            font-size: 15px;
             color: #aaa;
-        }
-
-        /* --- TERMINAL VISUALIZATION --- */
-        .terminal-window {
-            background: #0f0f0f;
-            border: 1px solid #444;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            padding: 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
+            line-height: 1.7;
             margin-bottom: 20px;
         }
 
+        /* --- TERMINAL WINDOW --- */
+        .terminal-window {
+            background: #080808;
+            border: 1px solid #333;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
         .term-header {
-            background: #222;
-            padding: 5px 10px;
+            background: #151515;
+            padding: 8px 12px;
             display: flex;
             gap: 6px;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #222;
         }
 
         .dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -109,78 +128,54 @@
         .dot.y { background: #ffbd2e; }
         .dot.g { background: #27c93f; }
 
-        .term-body {
-            padding: 15px;
-            color: #ccc;
-            font-size: 13px;
-        }
-
+        .term-body { padding: 20px; color: #ccc; font-size: 13px; line-height: 1.5; }
+        .path { color: var(--neon-purple); }
         .cmd { color: white; font-weight: bold; }
-        .path { color: var(--accent); }
-        .output { color: #888; margin-bottom: 10px; display: block; }
-        .highlight { color: var(--accent); font-weight: bold; }
-        
-        .cursor {
-            display: inline-block;
-            width: 8px;
-            height: 15px;
-            background: var(--accent);
-            animation: blink 1s infinite;
-            vertical-align: middle;
-        }
+        .output { color: #888; margin-top: 5px; margin-bottom: 15px; display: block; }
+        .highlight { color: var(--neon-purple); font-weight: bold; }
+        .cursor { display: inline-block; width: 8px; height: 15px; background: var(--neon-purple); animation: blink 1s infinite; vertical-align: middle; }
 
-        /* --- PLACEHOLDER BOXES FOR IMAGES --- */
-        .media-placeholder {
-            width: 100%;
-            height: 180px;
-            background: #151515;
+        /* --- GAMING SECTION --- */
+        .game-banner {
+            background: #111;
             border: 1px dashed #444;
+            height: 120px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             color: #555;
             font-family: monospace;
-            font-size: 10px;
-            margin-bottom: 15px;
-            border-radius: 6px;
+            font-size: 11px;
+            border-radius: 4px;
+            margin-bottom: 20px;
             transition: 0.3s;
         }
         
-        .media-placeholder:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: rgba(189, 0, 255, 0.05);
-        }
+        .game-banner:hover { border-color: var(--neon-purple); color: var(--neon-purple); background: rgba(189, 0, 255, 0.05); }
 
-        .media-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
-
-        /* --- GAMING BADGE --- */
         .game-badge {
-            background: rgba(189, 0, 255, 0.1);
-            border: 1px solid var(--accent);
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 10px;
+            background: linear-gradient(90deg, rgba(189, 0, 255, 0.1) 0%, transparent 100%);
+            border-left: 2px solid var(--neon-purple);
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
         }
-        .game-title { font-family: 'Courier New', monospace; font-weight: bold; font-size: 20px; color: white; text-shadow: 0 0 10px var(--accent); letter-spacing: 2px; margin-bottom: 5px; }
+
+        .game-title { font-family: 'Courier New', monospace; font-weight: bold; font-size: 18px; color: white; letter-spacing: 2px; }
+        .game-dev { font-size: 10px; color: var(--neon-purple); font-weight: bold; font-family: monospace; margin-top: 3px; }
 
         /* --- BOOK SECTION --- */
-        .book-section {
-            border-top: 1px solid #333;
-            padding-top: 20px;
-            margin-top: 10px;
+        .book-layout {
             display: flex;
-            gap: 20px;
+            gap: 30px;
             align-items: center;
         }
-        
+
         .book-cover-slot {
-            width: 120px;
-            height: 180px;
-            background: #111;
-            border: 1px solid #444;
+            width: 130px;
+            height: 195px;
+            background: #0a0a0a;
+            border: 1px solid #333;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -189,56 +184,48 @@
             font-size: 10px;
             font-family: monospace;
             text-align: center;
-            padding: 10px;
+            border-radius: 4px;
+            cursor: zoom-in;
+            overflow: hidden;
+            transition: 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
+
+        .book-cover-slot:hover {
+            border-color: var(--neon-purple);
+            box-shadow: 0 10px 30px rgba(189, 0, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
+
+        .book-meta-title { font-size: 22px; color: white; font-weight: bold; margin-bottom: 5px; }
+        .book-meta-author { font-size: 12px; color: var(--neon-purple); font-family: monospace; letter-spacing: 1px; display: block; margin-bottom: 15px; }
 
         /* --- DONATION SECTION --- */
-        .donation-section {
-            border-top: 1px solid #333;
-            padding-top: 20px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .donation-header {
-            color: var(--accent);
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
-
         .donation-grid {
             display: flex;
-            justify-content: center;
-            gap: 30px;
-            flex-wrap: wrap;
+            gap: 20px;
             margin-bottom: 20px;
         }
 
         .crypto-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid #333;
+            background: #111;
+            border: 1px solid #222;
             padding: 20px;
-            border-radius: 8px;
-            width: 220px;
+            border-radius: 6px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             transition: 0.3s;
         }
 
-        .crypto-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(189, 0, 255, 0.1);
-            transform: translateY(-2px);
-        }
+        .crypto-card:hover { border-color: var(--neon-purple); transform: translateY(-2px); }
 
         .qr-slot {
-            width: 140px;
-            height: 140px;
+            width: 120px;
+            height: 120px;
             background: white;
             margin-bottom: 15px;
             display: flex;
@@ -248,89 +235,62 @@
             font-weight: bold;
             font-family: monospace;
             font-size: 10px;
-            border: 4px solid white;
         }
 
-        .coin-name {
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
+        .coin-name { color: white; font-weight: bold; font-size: 12px; margin-bottom: 10px; letter-spacing: 1px; }
+        .wallet-address { font-family: monospace; font-size: 9px; color: #888; background: #000; padding: 10px; border: 1px solid #222; width: 90%; text-align: center; border-radius: 4px; user-select: all; word-break: break-all; }
 
-        .wallet-address {
-            font-family: monospace;
-            font-size: 9px;
-            color: #888;
-            background: #050505;
-            padding: 8px;
-            border: 1px solid #222;
-            width: 100%;
-            word-break: break-all;
-            text-align: center;
-            border-radius: 4px;
-            user-select: all;
-        }
+        .future-note { font-size: 12px; color: #777; line-height: 1.6; font-style: italic; border-top: 1px solid #222; padding-top: 20px; margin-top: 10px; text-align: center; }
 
-        .future-note {
-            font-size: 11px;
-            color: #888;
-            max-width: 600px;
-            margin: 0 auto;
-            line-height: 1.6;
-            font-style: italic;
-            border: 1px solid #222;
-            padding: 15px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 6px;
+        /* --- MODAL --- */
+        .modal-backdrop {
+            display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100vw; height: 100vh; 
+            background-color: rgba(0, 0, 0, 0.95); align-items: center; justify-content: center; cursor: zoom-out;
         }
+        .modal-content { max-width: 90vw; max-height: 90vh; border: 2px solid var(--neon-purple); border-radius: 4px; cursor: default; }
+        .close-modal-btn { position: absolute; top: 25px; right: 40px; color: #666; font-size: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .close-modal-btn:hover { color: var(--neon-purple); }
 
+        /* --- BACK BUTTON --- */
+        .btn-wrapper { display: flex; justify-content: center; margin-top: 40px; margin-bottom: 40px; }
         .back-btn {
-            background: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            padding: 15px 30px;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 14px;
-            cursor: pointer;
-            text-transform: uppercase;
-            margin-top: 30px;
-            margin-bottom: 20px;
-            transition: 0.3s;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            align-self: center;
+            background: transparent; border: 1px solid var(--neon-purple); color: var(--neon-purple);
+            padding: 12px 30px; font-family: 'Courier New', monospace; font-weight: bold; font-size: 13px;
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; text-decoration: none; letter-spacing: 1px;
         }
-
-        .back-btn:hover {
-            background: var(--accent);
-            color: black;
-            box-shadow: 0 0 20px var(--accent);
-        }
+        .back-btn:hover { background: var(--neon-purple); color: black; box-shadow: 0 0 20px var(--neon-glow); }
 
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>ECOSYSTEM</h1>
-        <span class="subtitle">INTEGRATION // LITERATURE // ENTERTAINMENT</span>
+    <div id="image-modal" class="modal-backdrop" onclick="closeModal()">
+        <span class="close-modal-btn" onclick="closeModal()">&times;</span>
+        <img id="enlarged-img" class="modal-content" src="BOOK-COVER.png" alt="The Unseen Clock - Full Cover" onclick="event.stopPropagation();">
+    </div>
 
-        <div class="section-grid">
-            <div class="info-block">
-                <h3>System Level Integration</h3>
-                <p>
-                    HTS operates as a robust system add-on, serving as a 
-                    <b>drop-in replacement</b> for the standard Linux Date command.
-                </p>
-                <p>
-                    Administrators utilize the <b>hts-time</b> command to query the core logic directly, 
-                    bypassing local timezone conversion for raw Epoch data.
-                </p>
+    <nav class="nav-bar">
+        <a href="../../index.html" class="tab-link">CLOCK</a>
+        <a href="../../converters.html" class="tab-link">CONVERTERS</a>
+        <a href="../../timezones.html" class="tab-link">TIMEZONES</a>
+        <a href="../../status.html" class="tab-link">STATUS</a>
+        <a href="../../screensaver.html" class="tab-link">SCREENSAVER</a>
+        <a href="../../features.html" class="tab-link">FEATURES</a>
+        <a href="../../about.html" class="tab-link">ABOUT</a>
+    </nav>
+
+    <div id="content-viewport">
+        <div class="page-content-scroll">
+            
+            <h1 class="neon-h1">Ecosystem</h1>
+            <div class="page-subtitle">INTEGRATION // LITERATURE // ENTERTAINMENT</div>
+
+            <div class="module-card">
+                <h3 class="module-title"><span class="module-icon">💻</span> System Level Integration</h3>
+                <div class="module-text">
+                    HTS operates as a robust system add-on, serving as a <b>drop-in replacement</b> for the standard Linux Date command. Administrators utilize the <b>hts-time</b> command to query the core logic directly, bypassing local timezone conversion for raw Epoch data.
+                </div>
                 
                 <div class="terminal-window">
                     <div class="term-header">
@@ -343,7 +303,6 @@
                             > EPOCH DELTA: +3 YRS<br>
                             > HTS OUTPUT: <span class="highlight">1A40003</span>
                         </div>
-                        <br>
                         <div><span class="path">user@linux:~/s</span> $ <span class="cmd">hts-time --sync</span></div>
                         <div class="output">> LATENCY: 0.0004ms [OK]</div>
                         <div><span class="path">user@linux:~/s</span> $ <span class="cursor"></span></div>
@@ -351,68 +310,77 @@
                 </div>
             </div>
 
-            <div class="info-block">
-                <h3>Gaming & Simulation</h3>
+            <div class="module-card">
+                <h3 class="module-title"><span class="module-icon">🎮</span> Gaming & Simulation</h3>
                 
-                <div class="media-placeholder">
-                    <div class="media-icon">🎮</div>
-                    [ EPOCH26 GAME ART ]<br>1920x1080
+                <div class="game-banner">
+                    [ EPOCH26 GAME ART ] 1920x1080
                 </div>
 
-                <p>
+                <div class="module-text">
                     <b>HTS solves time.</b> Our flagship title, <b>Epoch26</b>, utilizes the system to manage complex resource growth and interstellar travel times with pure integer math, completely eliminating calendar bugs.
-                </p>
+                </div>
 
                 <div class="game-badge">
                     <div class="game-title">EPOCH26</div>
-                    <div style="font-family: monospace; font-weight: bold; color: var(--accent); font-size: 10px;">POWERED BY HTS CORE</div>
-                    <div style="font-size: 9px; color: #888; margin-top: 5px;">STATUS: IN DEVELOPMENT</div>
+                    <div class="game-dev">POWERED BY HTS CORE // STATUS: IN DEVELOPMENT</div>
                 </div>
             </div>
-        </div>
 
-        <div class="book-section">
-            <div class="book-cover-slot">
-                [ BOOK COVER ]<br>THE UNSEEN CLOCK
+            <div class="module-card">
+                <h3 class="module-title"><span class="module-icon">📚</span> Essential Reading</h3>
+                
+                <div class="book-layout">
+                    <div class="book-cover-slot" onclick="openModal()" title="Click to enlarge">
+                        <img src="BOOK-COVER.png" alt="The Unseen Clock Cover Thumbnail" class="book-cover-img" onerror="this.outerHTML='<div style=\'padding:10px;\'>[ MISSING IMAGE ]<br>BOOK-COVER.png</div>'">
+                    </div>
+                    
+                    <div>
+                        <div class="book-meta-title">The Unseen Clock</div>
+                        <span class="book-meta-author">BY ANTONIO STORCKE</span>
+                        <div class="module-text" style="margin-bottom: 0;">
+                            The foundational text that started it all. Storcke explores the philosophical and mathematical limitations of the Gregorian calendar and proposes the architecture for a time system designed to outlast human civilization itself. A must-read for understanding the "why" behind the code.
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="info-block" style="flex: 1;">
-                <h3>Essential Reading</h3>
-                <p style="margin-top: 5px; color: white; font-weight: bold; font-size: 16px;">The Unseen Clock</p>
-                <p style="margin-top: 0; font-size: 12px; color: var(--accent);">BY ANTONIO STORCKE</p>
-                <p>
-                    The foundational text that started it all. Storcke explores the philosophical and mathematical limitations of the Gregorian calendar and proposes the architecture for a time system designed to outlast human civilization itself. A must-read for understanding the "why" behind the code.
-                </p>
-            </div>
-        </div>
 
-        <div class="donation-section">
-            <div class="donation-header">Support the Project</div>
-            <div class="donation-grid">
-                <div class="crypto-card">
-                    <div class="qr-slot">[ BITCOIN QR ]</div>
-                    <div class="coin-name">BITCOIN (BTC)</div>
-                    <div class="wallet-address">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div>
+            <div class="module-card">
+                <h3 class="module-title"><span class="module-icon">🛡️</span> Foundation Support</h3>
+                
+                <div class="donation-grid">
+                    <div class="crypto-card">
+                        <div class="qr-slot">[ BITCOIN QR ]</div>
+                        <div class="coin-name">BITCOIN (BTC)</div>
+                        <div class="wallet-address">COMING SOON</div>
+                    </div>
+                    
+                    <div class="crypto-card">
+                        <div class="qr-slot">[ STELLAR QR ]</div>
+                        <div class="coin-name">USDC (STELLAR)</div>
+                        <div class="wallet-address">COMING SOON</div>
+                    </div>
                 </div>
                 
-                <div class="crypto-card">
-                    <div class="qr-slot">[ STELLAR QR ]</div>
-                    <div class="coin-name">USDC (STELLAR)</div>
-                    <div class="wallet-address">GB56OQO34KNV2Z5F5CHW37V6Q21...</div>
+                <div class="future-note">
+                    Funds contributed to these wallets are mathematically locked and preserved for the future establishers of the <b>Human Time System Foundation</b>. These assets will become accessible and usable by the Foundation at the beginning of <b>Epoch B</b> (approx. 10,000 years from now). The cryptographic mechanisms ensuring this multi-millennial asset transfer are detailed in <i>The Unseen Clock</i>.
                 </div>
             </div>
-            
-            <div class="future-note">
-                Funds contributed to these wallets are mathematically locked and preserved for the future establishers of the 
-                <b>Human Time System Foundation</b>. These assets will become accessible and usable by the Foundation 
-                at the beginning of <b>Epoch B</b> (approx. 50,000 years from now). 
-                <br><br>
-                The cryptographic mechanisms ensuring this multi-millennial asset transfer are detailed in 
-                <i>The Unseen Clock</i>.
-            </div>
-        </div>
 
-        <a href="../../index.html?tab=about" class="back-btn"><< RETURN TO ABOUT V2</a>
+            <div class="btn-wrapper">
+                <a href="../../about.html" class="back-btn"><< RETURN TO ABOUT</a>
+            </div>
+
+        </div>
     </div>
 
+    <script>
+        const modal = document.getElementById("image-modal");
+        function openModal() { modal.style.display = "flex"; }
+        function closeModal() { modal.style.display = "none"; }
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape" && modal.style.display === "flex") { closeModal(); }
+        });
+    </script>
 </body>
 </html>

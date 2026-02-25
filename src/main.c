@@ -54,12 +54,12 @@
  * flag — only terminal/stdout output is silenced.
  *
  * SILENCED when HTS_DEBUG 0:
- *   - log_debug()  — all BRIDGE, MHD, PAGE, CHOOSER, THEME, etc. msgs
- *   - log_warn()   — ⚠ WARN lines
- *   - log_error()  — ✖ ERROR lines
+ * - log_debug()  — all BRIDGE, MHD, PAGE, CHOOSER, THEME, etc. msgs
+ * - log_warn()   — ⚠ WARN lines
+ * - log_error()  — ✖ ERROR lines
  *
  * ALWAYS printed (never silenced):
- *   - print_hts()  — the HTS timestamp banner on startup
+ * - print_hts()  — the HTS timestamp banner on startup
  * ══════════════════════════════════════════════════════════════════ */
 #define HTS_DEBUG 1
 /* ══════════════════════════════════════════════════════════════════ */
@@ -566,12 +566,12 @@ static void chooser_commit(HTSFileChooser *c) {
     }
     gtk_window_destroy(GTK_WINDOW(c->window));
 }
-//end of part 2 of 4 -------------------------------------------------------------------------------------------
+
 /* ─────────────────────────────────────────────────────────────────
  * HTS ART CHOOSER — stained-glass sidebar + thumbnail grid
  *
  * Thumbnails use the FreeDesktop cache standard:
- *   ~/.cache/thumbnails/large/<md5(file:///path)>.png
+ * ~/.cache/thumbnails/large/<md5(file:///path)>.png
  * ffmpeg extracts a frame automatically on first open.
  * Nautilus/Nemo share the same cache so thumbnails only
  * ever get generated once.
@@ -651,8 +651,6 @@ static void thumb_task_done(GObject *src, GAsyncResult *res, gpointer data) {
     g_idle_add(thumb_swap_idle, data); /* hop back to main thread */
 }
 
-/* Returns a cached pixbuf immediately (NULL if not cached yet).
-   If not cached, kicks off async ffmpeg and updates image_placeholder when done. */
 /* Returns a cached pixbuf immediately (NULL if not cached yet).
    If not cached, kicks off async ffmpeg and updates image_placeholder when done. */
 static GdkPixbuf *make_thumbnail_or_async(const char *full_path, gboolean is_dir,
@@ -1062,7 +1060,7 @@ static void open_hts_screensaver_chooser(GtkWidget *parent_widget, WebKitWebView
 
 void sync_and_scan_themes(WebKitWebView *web_view) {}
 void scan_faceplates(WebKitWebView *web_view) {}
-//end of part 3 of 4 -------------------------------------------------------------------------------------------
+
 static void on_browser_sync_request(WebKitUserContentManager *m, JSCValue *r, gpointer web_view) {
     char *msg = jsc_value_to_string(r); if (!msg) return;
     log_debug("BRIDGE MSG: %s", msg);
@@ -1080,6 +1078,7 @@ static void on_browser_sync_request(WebKitUserContentManager *m, JSCValue *r, gp
         }
         g_strfreev(parts);
     } 
+    /* THIS IS THE FIX: Instantly catch set_exit_btn signals to hide the GTK window */
     else if (g_str_has_prefix(msg, "set_exit_btn|")) {
         char **parts = g_strsplit(msg, "|", 2);
         if (parts && parts[1]) {
@@ -1416,12 +1415,12 @@ int main(int argc, char **argv) {
     print_hts();
 
     /* 2. Scan our own flags BEFORE GTK sees argv.
-     *    GTK does not know about --gui and will error on unknown options.
-     *    We check for our flags here, then strip --gui out so GTK never
-     *    encounters it. --screensaver is kept in argv because nothing
-     *    inside GTK/GApplication will choke on an unrecognised flag when
-     *    G_APPLICATION_DEFAULT_FLAGS is used — but we strip it too for
-     *    cleanliness and re-set is_screensaver ourselves. */
+     * GTK does not know about --gui and will error on unknown options.
+     * We check for our flags here, then strip --gui out so GTK never
+     * encounters it. --screensaver is kept in argv because nothing
+     * inside GTK/GApplication will choke on an unrecognised flag when
+     * G_APPLICATION_DEFAULT_FLAGS is used — but we strip it too for
+     * cleanliness and re-set is_screensaver ourselves. */
     gboolean launch_gui = FALSE;
 
     /* Build a clean argv with --gui and --screensaver removed */

@@ -1,4 +1,4 @@
-# The Storcke Human Time System- By Antonio Storcke.
+# The Storcke Human Time System - By Antonio Storcke.
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -7,4 +7,5 @@ Comment=The Storcke Human Time System Universal Tool
 Exec=hts-time --gui
 Icon=com.storcke64.hts_time
 Terminal=false
-Categories=Utility;
+Categories=Utility;Clock;
+Keywords=time;calendar;clock;epoch;storcke;
