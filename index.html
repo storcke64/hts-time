@@ -62,6 +62,16 @@
             font-family: monospace;
             margin-bottom: 20px;
         }
+        .output-block {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 6px;
+            color: #a9b7c6;
+            overflow-x: auto;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
         .note {
             background-color: #1e1e1e;
             border-left: 4px solid #03dac6;
@@ -121,6 +131,16 @@
     <p>If you want to use the terminal interface, you use the standard <strong><code>hts-time</code></strong> command without any flags. Through Flatpak, run:</p>
     <div class="code-block">
         flatpak run com.storcke64.hts_time
+    </div>
+    
+    <p>This will calculate and display the current deep-time date. The expected output will look similar to this:</p>
+    <div class="output-block">
+The Storcke Human Time System
+-----------------------------
+Current Epoch: A
+HTS Year: A40,003
+Gregorian Equivalent: 2026 CE
+Years until Epoch B: 9,997
     </div>
 
     <div class="note">
