@@ -23,6 +23,11 @@
             color: #bb86fc;
             margin-top: 30px;
         }
+        h3 {
+            color: #03dac6;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
         .description {
             font-size: 1.1em;
             margin-bottom: 30px;
@@ -90,7 +95,7 @@
     </div>
 
     <h2>Installation Instructions</h2>
-    <p>To install the HTS application (GUI and CLI) on Fedora, Ubuntu, or any Flatpak-enabled Linux distribution, open your terminal and run the following commands:</p>
+    <p>To install the HTS application on Fedora, Ubuntu, or any Flatpak-enabled Linux distribution, open your terminal and run the following commands:</p>
 
     <p><strong>1. Add this custom repository to your system:</strong></p>
     <div class="code-block">
@@ -103,7 +108,17 @@
     </div>
 
     <h2>How to Run</h2>
-    <p>Once installed, you can launch the GUI from your application menu, or run it directly from the terminal:</p>
+    <p>The Human Time System includes both a visual interface and a command-line tool. Choose how you want to interact with it below:</p>
+
+    <h3>Graphical Interface (GUI)</h3>
+    <p>The easiest way to launch the calendar is to find the <strong>HTS Time System</strong> icon in your desktop's application menu and click it.</p>
+    <p>You can also launch the GUI directly from your terminal by passing the <code>--gui</code> flag to the base command:</p>
+    <div class="code-block">
+        flatpak run com.storcke64.hts_time --gui
+    </div>
+
+    <h3>Command Line Interface (CLI)</h3>
+    <p>If you prefer to interact with the system via the terminal, simply run the base command without the flag. This executes the core <code>hts-time</code> logic inside the sandbox:</p>
     <div class="code-block">
         flatpak run com.storcke64.hts_time
     </div>
