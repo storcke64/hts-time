@@ -8,9 +8,7 @@
         "--share=ipc",
         "--socket=fallback-x11",
         "--socket=wayland",
-        "--socket=x11",
         "--socket=pulseaudio",
-        "--device=all",
         "--device=dri",
         "--share=network",
         "--filesystem=xdg-videos:ro",
@@ -22,8 +20,7 @@
         "--env=GDK_BACKEND=wayland,x11",
         "--env=GTK_USE_PORTAL=1",
         "--env=GST_PLUGIN_PATH=/app/lib/ffmpeg/lib/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0:/usr/lib/gstreamer-1.0",
-        "--env=LD_LIBRARY_PATH=/app/lib/ffmpeg/lib",
-        "--env=WEBKIT_FORCE_SANDBOX=0"
+        "--env=LD_LIBRARY_PATH=/app/lib/ffmpeg/lib"
     ],
     "add-extensions": {
         "org.freedesktop.Platform.ffmpeg-full": {
@@ -33,24 +30,6 @@
         }
     },
     "modules": [
-        {
-            "name": "rsync",
-            "buildsystem": "autotools",
-            "config-opts": [
-                "--disable-lz4",
-                "--disable-zstd",
-                "--disable-xxhash",
-                "--disable-openssl",
-                "--disable-debug"
-            ],
-            "sources": [
-                {
-                    "type": "archive",
-                    "url": "https://download.samba.org/pub/rsync/src/rsync-3.4.1.tar.gz",
-                    "sha256": "2924bcb3a1ed8b551fc101f740b9f0fe0a202b115027647cf69850d65fd88c52"
-                }
-            ]
-        },
         {
             "name": "libqrencode",
             "buildsystem": "cmake-ninja",
@@ -94,13 +73,6 @@
             ]
         },
         {
-            "name": "ffmpeg-mount-point",
-            "buildsystem": "simple",
-            "build-commands": [
-                "mkdir -p /app/lib/ffmpeg"
-            ]
-        },
-        {
             "name": "flathub-metadata",
             "buildsystem": "simple",
             "build-commands": [
@@ -112,6 +84,13 @@
                     "type": "dir",
                     "path": "."
                 }
+            ]
+        },
+        {
+            "name": "ffmpeg-mount-point",
+            "buildsystem": "simple",
+            "build-commands": [
+                "mkdir -p /app/lib/ffmpeg"
             ]
         }
     ]

@@ -28,3 +28,4 @@ data/pages/*.tmp
 build-dir/
 .flatpak-builder/
 build-dir/
+repo/
