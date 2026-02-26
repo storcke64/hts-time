@@ -27,7 +27,6 @@
             font-size: 1.1em;
             margin-bottom: 30px;
         }
-        /* Updated Gallery Styles with Hover Effect */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -39,7 +38,7 @@
             transition: transform 0.2s ease-in-out;
         }
         .gallery a:hover {
-            transform: scale(1.03); /* Slight zoom when hovering */
+            transform: scale(1.03);
         }
         .gallery img {
             width: 100%;
@@ -95,7 +94,7 @@
 
     <p><strong>1. Add this custom repository to your system:</strong></p>
     <div class="code-block">
-        flatpak remote-add --user --if-not-exists storcke64-hts https://storcke64.github.io/hts-time/
+        flatpak remote-add --user --if-not-exists --no-gpg-verify storcke64-hts https://storcke64.github.io/hts-time/
     </div>
 
     <p><strong>2. Install the application:</strong></p>
