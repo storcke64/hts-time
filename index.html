@@ -27,18 +27,26 @@
             font-size: 1.1em;
             margin-bottom: 30px;
         }
-        /* New Gallery Styles */
+        /* Updated Gallery Styles with Hover Effect */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
         }
+        .gallery a {
+            display: block;
+            transition: transform 0.2s ease-in-out;
+        }
+        .gallery a:hover {
+            transform: scale(1.03); /* Slight zoom when hovering */
+        }
         .gallery img {
             width: 100%;
             border-radius: 8px;
             border: 1px solid #333;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
         .code-block {
             background-color: #000000;
@@ -68,10 +76,18 @@
     </p>
 
     <div class="gallery">
-        <img src="screenshot1.png" alt="HTS GUI Screenshot 1">
-        <img src="screenshot2.png" alt="HTS GUI Screenshot 2">
-        <img src="screenshot3.png" alt="HTS CLI Screenshot 3">
-        <img src="screenshot4.png" alt="HTS Deep Time Screenshot 4">
+        <a href="screenshot1.png" target="_blank" title="Click to view full size">
+            <img src="screenshot1.png" alt="HTS Clock View">
+        </a>
+        <a href="screenshot2.png" target="_blank" title="Click to view full size">
+            <img src="screenshot2.png" alt="HTS Global Ledger">
+        </a>
+        <a href="screenshot3.png" target="_blank" title="Click to view full size">
+            <img src="screenshot3.png" alt="HTS Screensaver Media Vault">
+        </a>
+        <a href="screenshot4.png" target="_blank" title="Click to view full size">
+            <img src="screenshot4.png" alt="HTS Node Map">
+        </a>
     </div>
 
     <h2>Installation Instructions</h2>
