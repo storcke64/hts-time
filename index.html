@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTS Time System - Flatpak Repository</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            padding: 40px 20px;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #ffffff;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #bb86fc;
+            margin-top: 30px;
+        }
+        .description {
+            font-size: 1.1em;
+            margin-bottom: 30px;
+        }
+        /* New Gallery Styles */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .gallery img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #333;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .code-block {
+            background-color: #000000;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 6px;
+            color: #00ff00;
+            overflow-x: auto;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+        .note {
+            background-color: #1e1e1e;
+            border-left: 4px solid #03dac6;
+            padding: 15px;
+            margin-top: 30px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The Storcke Human Time System</h1>
+    
+    <p class="description">
+        Welcome to the official Flatpak repository for the Human Time System. This repository hosts an infinite, cyclical calendar designed for deep time, tracking Epochs of 50,000 years starting from A0.
+    </p>
+
+    <div class="gallery">
+        <img src="screenshot1.png" alt="HTS GUI Screenshot 1">
+        <img src="screenshot2.png" alt="HTS GUI Screenshot 2">
+        <img src="screenshot3.png" alt="HTS CLI Screenshot 3">
+        <img src="screenshot4.png" alt="HTS Deep Time Screenshot 4">
+    </div>
+
+    <h2>Installation Instructions</h2>
+    <p>To install the HTS application (GUI and CLI) on Fedora, Ubuntu, or any Flatpak-enabled Linux distribution, open your terminal and run the following commands:</p>
+
+    <p><strong>1. Add this custom repository to your system:</strong></p>
+    <div class="code-block">
+        flatpak remote-add --user --if-not-exists storcke64-hts https://storcke64.github.io/hts-time/
+    </div>
+
+    <p><strong>2. Install the application:</strong></p>
+    <div class="code-block">
+        flatpak install --user storcke64-hts com.storcke64.hts_time
+    </div>
+
+    <h2>How to Run</h2>
+    <p>Once installed, you can launch the GUI from your application menu, or run it directly from the terminal:</p>
+    <div class="code-block">
+        flatpak run com.storcke64.hts_time
+    </div>
+
+    <div class="note">
+        <strong>Note:</strong> This web page exists to serve Flatpak repository data. You do not need to download any files directly from your browser. Please use the terminal commands provided above.
+    </div>
+
+</body>
+</html>
