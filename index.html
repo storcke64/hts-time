@@ -11,45 +11,61 @@
             color: #e0e0e0;
             padding: 40px 20px;
             line-height: 1.6;
-            max-width: 800px;
+            max-width: 900px; /* Increased slightly to accommodate side-by-side layout */
             margin: 0 auto;
-        }
-        /* Header Flexbox Container */
-        .header-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #333;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
         }
         h1 {
             color: #ffffff;
-            margin: 0; /* Removes default margin for perfect alignment */
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.2em;
         }
-        .logo {
-            max-height: 80px; /* Keeps the logo cleanly proportioned */
-            max-width: 200px;
+        /* New Hero Section Layout */
+        .hero-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            margin-bottom: 50px;
+        }
+        .hero-text {
+            flex: 1; /* Takes up available left space */
+        }
+        .hero-text .description {
+            font-size: 1.2em;
+            margin-bottom: 0;
+            color: #cccccc;
+        }
+        .hero-logo {
+            flex: 0 0 350px; /* Sets a nice large fixed width for the logo area */
+        }
+        .hero-logo img {
+            width: 100%;
+            height: auto;
             object-fit: contain;
+            /* Adds a subtle shadow to make the logo pop off the dark background */
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
+        
+        /* Rest of the styles */
         h2 {
             color: #bb86fc;
-            margin-top: 30px;
+            margin-top: 40px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
         }
         h3 {
             color: #03dac6;
-            margin-top: 25px;
-            margin-bottom: 10px;
-        }
-        .description {
-            font-size: 1.1em;
-            margin-bottom: 30px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
         }
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 40px;
         }
         .gallery a {
             display: block;
@@ -57,53 +73,73 @@
         }
         .gallery a:hover {
             transform: scale(1.03);
+            z-index: 10;
         }
         .gallery img {
             width: 100%;
-            border-radius: 8px;
+            border-radius: 12px; /* Slightly rounder corners */
             border: 1px solid #333;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             cursor: pointer;
         }
         .code-block {
-            background-color: #000000;
+            background-color: #080808; /* Slightly darker for contrast */
             border: 1px solid #333;
-            padding: 15px;
-            border-radius: 6px;
+            padding: 20px;
+            border-radius: 8px;
             color: #00ff00;
             overflow-x: auto;
-            font-family: monospace;
-            margin-bottom: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.05em;
+            margin-bottom: 25px;
         }
         .output-block {
-            background-color: #1e1e1e;
-            border: 1px solid #444;
+            background-color: #1a1a1a;
+            border-left: 4px solid #bb86fc; /* Purple accent for output */
             padding: 15px;
-            border-radius: 6px;
             color: #a9b7c6;
             overflow-x: auto;
-            font-family: monospace;
-            margin-bottom: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            margin-bottom: 25px;
         }
         .note {
-            background-color: #1e1e1e;
+            background-color: #1a1a1a;
             border-left: 4px solid #03dac6;
-            padding: 15px;
-            margin-top: 30px;
-            font-size: 0.9em;
+            padding: 20px;
+            margin-top: 50px;
+            font-size: 0.95em;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .hero-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            .hero-logo {
+                flex: 0 0 auto;
+                width: 80%;
+                max-width: 300px;
+                margin-top: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="header-container">
-        <h1>The Storcke Human Time System</h1>
-        <img src="logo.png" alt="HTS Logo" class="logo">
+    <h1>The Storcke Human Time System</h1>
+
+    <div class="hero-container">
+        <div class="hero-text">
+            <p class="description">
+                Welcome to the official Flatpak repository for the Human Time System. This platform hosts an infinite, cyclical calendar designed for deep time, tracking Epochs of 50,000 years starting from A0.
+            </p>
+        </div>
+        <div class="hero-logo">
+            <img src="logo.png" alt="Large HTS Logo">
+        </div>
     </div>
-    
-    <p class="description">
-        Welcome to the official Flatpak repository for the Human Time System. This repository hosts an infinite, cyclical calendar designed for deep time, tracking Epochs of 50,000 years starting from A0.
-    </p>
 
     <div class="gallery">
         <a href="screenshot1.png" target="_blank" title="Click to view full size">
@@ -124,14 +160,10 @@
     <p>To install the HTS application on Fedora, Ubuntu, or any Flatpak-enabled Linux distribution, open your terminal and run the following commands:</p>
 
     <p><strong>1. Add this custom repository to your system:</strong></p>
-    <div class="code-block">
-        flatpak remote-add --user --if-not-exists --no-gpg-verify storcke64-hts https://storcke64.github.io/hts-time/
-    </div>
+    <div class="code-block">flatpak remote-add --user --if-not-exists --no-gpg-verify storcke64-hts https://storcke64.github.io/hts-time/</div>
 
     <p><strong>2. Install the application:</strong></p>
-    <div class="code-block">
-        flatpak install --user storcke64-hts com.storcke64.hts_time
-    </div>
+    <div class="code-block">flatpak install --user storcke64-hts com.storcke64.hts_time</div>
 
     <h2>How to Run</h2>
     <p>The Human Time System is driven by the core <strong><code>hts-time</code></strong> command. You can access both the visual interface and the command-line tool depending on how you launch it:</p>
@@ -139,20 +171,14 @@
     <h3>Graphical Interface (GUI)</h3>
     <p>If you prefer a visual experience, the easiest way is to click the <strong>HTS Time System</strong> icon in your desktop's application menu.</p>
     <p>To launch the GUI from your terminal, you must use the <strong><code>hts-time --gui</code></strong> command. Through the Flatpak wrapper, it looks like this:</p>
-    <div class="code-block">
-        flatpak run com.storcke64.hts_time --gui
-    </div>
+    <div class="code-block">flatpak run com.storcke64.hts_time --gui</div>
 
     <h3>Command Line Interface (CLI)</h3>
     <p>If you want to use the terminal interface, you use the standard <strong><code>hts-time</code></strong> command without any flags. Through Flatpak, run:</p>
-    <div class="code-block">
-        flatpak run com.storcke64.hts_time
-    </div>
+    <div class="code-block">flatpak run com.storcke64.hts_time</div>
     
     <p>This will output the current standard date followed by the HTS deep-time date format. The output looks like this:</p>
-    <div class="output-block">
-Wed Feb 25 22:40:25 CST 2026  HTS A40003
-    </div>
+    <div class="output-block">Wed Feb 25 22:55:10 CST 2026  HTS A40003</div>
 
     <div class="note">
         <strong>Note:</strong> This web page exists to serve Flatpak repository data. You do not need to download any files directly from your browser. Please use the terminal commands provided above.
