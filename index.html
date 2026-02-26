@@ -108,17 +108,17 @@
     </div>
 
     <h2>How to Run</h2>
-    <p>The Human Time System includes both a visual interface and a command-line tool. Choose how you want to interact with it below:</p>
+    <p>The Human Time System is driven by the core <strong><code>hts-time</code></strong> command. You can access both the visual interface and the command-line tool depending on how you launch it:</p>
 
     <h3>Graphical Interface (GUI)</h3>
-    <p>The easiest way to launch the calendar is to find the <strong>HTS Time System</strong> icon in your desktop's application menu and click it.</p>
-    <p>You can also launch the GUI directly from your terminal by passing the <code>--gui</code> flag to the base command:</p>
+    <p>If you prefer a visual experience, the easiest way is to click the <strong>HTS Time System</strong> icon in your desktop's application menu.</p>
+    <p>To launch the GUI from your terminal, you must use the <strong><code>hts-time --gui</code></strong> command. Through the Flatpak wrapper, it looks like this:</p>
     <div class="code-block">
         flatpak run com.storcke64.hts_time --gui
     </div>
 
     <h3>Command Line Interface (CLI)</h3>
-    <p>If you prefer to interact with the system via the terminal, simply run the base command without the flag. This executes the core <code>hts-time</code> logic inside the sandbox:</p>
+    <p>If you want to use the terminal interface, you use the standard <strong><code>hts-time</code></strong> command without any flags. Through Flatpak, run:</p>
     <div class="code-block">
         flatpak run com.storcke64.hts_time
     </div>
