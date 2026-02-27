@@ -7,7 +7,7 @@
   <summary>An infinite, cyclical deep-time calendar</summary>
   <description>
     <p>The Storcke Human Time System (HTS) is an infinite, cyclical calendar designed for deep time. It starts at A0 (40,000 years pre-2023) and uses Epochs lasting 50,000 years.</p>
-    <p>This application provides a graphical interface, an interactive control panel, and a command-line tool.</p>
+    <p>This application provides a graphical interface, an interactive control panel, a video screensaver engine, and a command-line tool.</p>
   </description>
   <icon type="stock">com.storcke64.hts_time</icon>
   <launchable type="desktop-id">com.storcke64.hts_time.desktop</launchable>
@@ -17,6 +17,21 @@
   <developer id="com.storcke64">
     <name>Antonio Storcke</name>
   </developer>
+  
+  <categories>
+    <category>Utility</category>
+    <category>Clock</category>
+  </categories>
+
+  <keywords>
+    <keyword>screensaver</keyword>
+    <keyword>calendar</keyword>
+    <keyword>clock</keyword>
+    <keyword>time</keyword>
+    <keyword>epoch</keyword>
+    <keyword>video</keyword>
+  </keywords>
+
   <content_rating type="oars-1.1" />
   
   <screenshots>
@@ -29,7 +44,7 @@
       <caption>The Global Capital Ledger for worldwide timezone tracking</caption>
     </screenshot>
     <screenshot>
-      <image>https://storcke64.github.io/hts-time/screenshot3.jpg</image>
+      <image>https://storcke64.github.io/hts-time/screenshot3.png</image>
       <caption>The built-in media vault and video screensaver control panel</caption>
     </screenshot>
     <screenshot>
