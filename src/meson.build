@@ -2,7 +2,6 @@
 # Inventor: Antonio Storcke
 # File: src/meson.build
 
-# GStreamer dependencies for "Smart" video preview functionality
 gst_dep = dependency('gstreamer-1.0')
 gst_video_dep = dependency('gstreamer-video-1.0')
 gst_app_dep = dependency('gstreamer-app-1.0')
@@ -11,8 +10,7 @@ sources = files('main.c', 'hts-logic.c')
 
 c_args = [
   '-D_GNU_SOURCE',
-  # VERIFIED PATH: This matches your Flatpak build environment
-  '-DDATADIR="/app/bin"',
+  '-DDATADIR="' + get_option('prefix') / get_option('datadir') / 'hts-time' + '"',
   '-DPACKAGE_NAME="com.storcke64.hts_time"'
 ]
 
