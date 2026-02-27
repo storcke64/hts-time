@@ -18,12 +18,26 @@
     <name>Antonio Storcke</name>
   </developer>
   <content_rating type="oars-1.1" />
+  
   <screenshots>
     <screenshot type="default">
       <image>https://storcke64.github.io/hts-time/screenshot1.png</image>
-      <caption>The HTS Time System main interface</caption>
+      <caption>The HTS main clock interface displaying Epoch A40003</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://storcke64.github.io/hts-time/screenshot2.png</image>
+      <caption>The Global Capital Ledger for worldwide timezone tracking</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://storcke64.github.io/hts-time/screenshot3.jpg</image>
+      <caption>The built-in media vault and video screensaver control panel</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://storcke64.github.io/hts-time/screenshot4.png</image>
+      <caption>Classic animated screensaver modules</caption>
     </screenshot>
   </screenshots>
+
   <releases>
     <release version="1.0" date="2026-02-27">
       <description>
