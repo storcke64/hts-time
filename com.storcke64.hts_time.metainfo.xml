@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2025 Antonio Storcke -->
 <component type="desktop-application">
   <id>com.storcke64.hts_time</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-3.0-or-later</project_license>
+  <project_license>MIT</project_license>
   <name>HTS Time System</name>
   <summary>An infinite, cyclical deep-time calendar</summary>
   <description>
@@ -17,12 +18,10 @@
   <developer id="com.storcke64">
     <name>Antonio Storcke</name>
   </developer>
-  
   <categories>
     <category>Utility</category>
     <category>Clock</category>
   </categories>
-
   <keywords>
     <keyword>screensaver</keyword>
     <keyword>calendar</keyword>
@@ -31,9 +30,7 @@
     <keyword>epoch</keyword>
     <keyword>video</keyword>
   </keywords>
-
   <content_rating type="oars-1.1" />
-  
   <screenshots>
     <screenshot type="default">
       <image>https://storcke64.github.io/hts-time/screenshot1.png</image>
@@ -52,7 +49,6 @@
       <caption>Classic animated screensaver modules</caption>
     </screenshot>
   </screenshots>
-
   <releases>
     <release version="1.0" date="2026-02-27">
       <description>
