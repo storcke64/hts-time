@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<component type="desktop">
+<component type="desktop-application">
   <id>com.storcke64.hts_time</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
@@ -8,11 +8,27 @@
   <description>
     <p>The Storcke Human Time System (HTS) is an infinite, cyclical calendar designed for deep time. It starts at A0 (40,000 years pre-2023) and uses Epochs lasting 50,000 years.</p>
     <p>This application provides a graphical interface, an interactive control panel, and a command-line tool.</p>
-    <p>We do not offer legal advice.</p>
   </description>
+  <icon type="stock">com.storcke64.hts_time</icon>
   <launchable type="desktop-id">com.storcke64.hts_time.desktop</launchable>
   <url type="homepage">https://storcke64.github.io/hts-time/</url>
+  <url type="vcs-browser">https://github.com/storcke64/hts-time</url>
+  <url type="bugtracker">https://github.com/storcke64/hts-time/issues</url>
   <developer id="com.storcke64">
     <name>Antonio Storcke</name>
   </developer>
+  <content_rating type="oars-1.1" />
+  <screenshots>
+    <screenshot type="default">
+      <image>https://storcke64.github.io/hts-time/screenshot1.png</image>
+      <caption>The HTS Time System main interface</caption>
+    </screenshot>
+  </screenshots>
+  <releases>
+    <release version="1.0" date="2026-02-27">
+      <description>
+        <p>Initial Flathub release.</p>
+      </description>
+    </release>
+  </releases>
 </component>

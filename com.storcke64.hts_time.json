@@ -6,20 +6,16 @@
     "command": "hts-time",
     "finish-args": [
         "--share=ipc",
-        "--socket=fallback-x11",
         "--socket=wayland",
+        "--socket=fallback-x11",
         "--socket=pulseaudio",
         "--device=dri",
         "--share=network",
         "--filesystem=xdg-videos:ro",
-        "--filesystem=xdg-videos:create",
         "--talk-name=org.freedesktop.Notifications",
-        "--talk-name=org.freedesktop.portal.Desktop",
-        "--talk-name=org.freedesktop.portal.Documents",
-        "--talk-name=org.freedesktop.portal.FileChooser",
         "--env=GDK_BACKEND=wayland,x11",
         "--env=GTK_USE_PORTAL=1",
-        "--env=GST_PLUGIN_PATH=/app/lib/ffmpeg/lib/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0:/usr/lib/gstreamer-1.0",
+        "--env=GST_PLUGIN_PATH=/app/lib/ffmpeg/lib/gstreamer-1.0",
         "--env=LD_LIBRARY_PATH=/app/lib/ffmpeg/lib"
     ],
     "add-extensions": {
@@ -30,6 +26,13 @@
         }
     },
     "modules": [
+        {
+            "name": "ffmpeg-mount-point",
+            "buildsystem": "simple",
+            "build-commands": [
+                "mkdir -p /app/lib/ffmpeg"
+            ]
+        },
         {
             "name": "libqrencode",
             "buildsystem": "cmake-ninja",
@@ -67,8 +70,10 @@
             "buildsystem": "meson",
             "sources": [
                 {
-                    "type": "dir",
-                    "path": "."
+                    "type": "git",
+                    "url": "https://github.com/storcke64/hts-time.git",
+                    "tag": "A40003.1",
+                    "commit": "YOUR_FULL_COMMIT_SHA"
                 }
             ]
         },
@@ -81,16 +86,11 @@
             ],
             "sources": [
                 {
-                    "type": "dir",
-                    "path": "."
+                    "type": "git",
+                    "url": "https://github.com/storcke64/hts-time.git",
+                    "tag": "A40003.1",
+                    "commit": "YOUR_FULL_COMMIT_SHA"
                 }
-            ]
-        },
-        {
-            "name": "ffmpeg-mount-point",
-            "buildsystem": "simple",
-            "build-commands": [
-                "mkdir -p /app/lib/ffmpeg"
             ]
         }
     ]
