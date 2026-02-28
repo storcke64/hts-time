@@ -68,12 +68,16 @@
         {
             "name": "hts-time",
             "buildsystem": "meson",
+            "config-opts": [
+                "--prefix=/app",
+                "-Ddatadir=share"
+            ],
             "sources": [
                 {
                     "type": "git",
                     "url": "https://github.com/storcke64/hts-time.git",
-                    "tag": "A40003.1",
-                    "commit": "YOUR_FULL_COMMIT_SHA"
+                    "tag": "A40003.6",
+                    "commit": "f32b8776a71b1a7d497a0ae7d56a573efa98fde1"
                 }
             ]
         },
@@ -88,8 +92,8 @@
                 {
                     "type": "git",
                     "url": "https://github.com/storcke64/hts-time.git",
-                    "tag": "A40003.1",
-                    "commit": "YOUR_FULL_COMMIT_SHA"
+                    "tag": "A40003.6",
+                    "commit": "f32b8776a71b1a7d497a0ae7d56a573efa98fde1"
                 }
             ]
         }
