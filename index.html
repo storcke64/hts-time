@@ -90,8 +90,6 @@
             padding: 20px;
             margin-top: 50px;
         }
-
-        /* CLI Setup Section */
         .cli-box {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             border: 1px solid #03dac6;
@@ -99,15 +97,8 @@
             padding: 28px;
             margin: 30px 0;
         }
-        .cli-box h3 {
-            color: #03dac6;
-            margin-top: 0;
-            font-size: 1.2em;
-        }
-        .cli-box p {
-            color: #bbbbbb;
-            margin-bottom: 20px;
-        }
+        .cli-box h3 { color: #03dac6; margin-top: 0; font-size: 1.2em; }
+        .cli-box p { color: #bbbbbb; margin-bottom: 20px; }
         .script-block {
             background: #000;
             border: 1px solid #333;
@@ -119,7 +110,6 @@
             white-space: pre;
             overflow-x: auto;
             margin-bottom: 16px;
-            position: relative;
         }
         .copy-btn {
             display: inline-block;
@@ -137,12 +127,7 @@
         .copy-btn:hover { background: #00fff5; transform: translateY(-1px); }
         .copy-btn:active { transform: translateY(1px); }
         .copy-btn.copied { background: #22c55e; color: #fff; }
-
-        .method-tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
+        .method-tabs { display: flex; gap: 12px; margin-bottom: 20px; }
         .tab {
             padding: 8px 18px;
             border-radius: 8px;
@@ -154,13 +139,29 @@
             font-weight: 600;
             transition: all 0.2s;
         }
-        .tab.active {
-            background: #03dac6;
-            color: #000;
-            border-color: #03dac6;
-        }
+        .tab.active { background: #03dac6; color: #000; border-color: #03dac6; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        /* Store badge footer */
+        .store-footer {
+            text-align: center;
+            margin-top: 60px;
+            padding: 40px 0;
+            border-top: 1px solid #333;
+        }
+        .store-footer p {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .store-badge {
+            display: inline-block;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .store-badge:hover { transform: translateY(-3px); opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -202,11 +203,19 @@
     <div class="code-block">hts-time</div>
     <div class="output-block">Wed Feb 25 22:40:25 CST 2026  HTS A40003</div>
 
-    <!-- CLI SETUP SECTION -->
     <h2>🖥️ Enable CLI Access</h2>
     <div class="cli-box">
         <h3>Why is this needed?</h3>
         <p>Flatpak sandboxes apps for security, so the <code>hts-time</code> command isn't automatically available in your terminal. Use one of the two methods below to fix this.</p>
+
+        <h3>How to use these instructions</h3>
+        <ol style="color:#bbbbbb; margin-bottom:20px; padding-left:20px; line-height:2.2">
+            <li>Open a <strong style="color:#03dac6">Terminal</strong> on your system — search for "Terminal" in your app menu</li>
+            <li>Click the <strong style="color:#03dac6">Copy</strong> button below to copy the code</li>
+            <li><strong style="color:#03dac6">Paste</strong> it into the terminal window using <kbd style="background:#333;padding:2px 6px;border-radius:4px;">Ctrl+Shift+V</kbd></li>
+            <li>Press <kbd style="background:#333;padding:2px 6px;border-radius:4px;">Enter</kbd> to run it</li>
+            <li>✅ Done — type <code style="color:#00ff00">hts-time</code> in any terminal to use the CLI</li>
+        </ol>
 
         <div class="method-tabs">
             <div class="tab active" onclick="switchTab('script')">Setup Script (Recommended)</div>
@@ -255,6 +264,23 @@ fi</div>
 
     <div class="note">
         <strong>Note:</strong> This page serves the Flatpak repository data. Please use the terminal commands above to install.
+    </div>
+
+    <!-- Store Badge -->
+    <div class="store-footer">
+        <p>Also available on</p>
+        <a href="https://storcke64.com" class="store-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 240 80">
+                <rect width="240" height="80" rx="14" ry="14" fill="#1a1a2e"/>
+                <rect x="0" width="56" height="80" fill="#ff6b2b"/>
+                <rect x="42" width="14" height="80" fill="#ff6b2b"/>
+                <rect x="12" y="28" width="32" height="22" rx="3" fill="white"/>
+                <polygon points="28,44 22,37 34,37" fill="#ff6b2b"/>
+                <text x="72" y="29" font-family="Arial" font-size="11" fill="#aaaaaa" letter-spacing="1.5">GET IT ON</text>
+                <text x="71" y="57" font-family="Arial Black" font-weight="900" font-size="24" fill="white">Storcke64</text>
+                <rect width="240" height="80" rx="14" ry="14" fill="none" stroke="#333355" stroke-width="1.5"/>
+            </svg>
+        </a>
     </div>
 
     <script>
