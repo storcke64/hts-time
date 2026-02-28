@@ -21,7 +21,6 @@
             margin-bottom: 10px;
             font-size: 2.5em;
         }
-        /* Fundamental Functions Highlight Bar */
         .functions-bar {
             display: flex;
             gap: 20px;
@@ -39,16 +38,9 @@
             gap: 40px;
             margin-bottom: 50px;
         }
-        .hero-text {
-            flex: 1;
-        }
-        .hero-text .description {
-            font-size: 1.25em;
-            color: #bbbbbb;
-        }
-        .hero-logo {
-            flex: 0 0 320px;
-        }
+        .hero-text { flex: 1; }
+        .hero-text .description { font-size: 1.25em; color: #bbbbbb; }
+        .hero-logo { flex: 0 0 320px; }
         .hero-logo img {
             width: 100%;
             filter: drop-shadow(0 0 15px rgba(3, 218, 198, 0.2));
@@ -59,11 +51,7 @@
             border-bottom: 1px solid #333;
             padding-bottom: 10px;
         }
-        h3 {
-            color: #03dac6;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
+        h3 { color: #03dac6; margin-top: 30px; margin-bottom: 15px; }
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -77,9 +65,7 @@
             transition: transform 0.2s;
             cursor: pointer;
         }
-        .gallery img:hover {
-            transform: scale(1.03);
-        }
+        .gallery img:hover { transform: scale(1.03); }
         .code-block {
             background-color: #000;
             border: 1px solid #333;
@@ -88,6 +74,7 @@
             color: #00ff00;
             font-family: monospace;
             margin-bottom: 25px;
+            position: relative;
         }
         .output-block {
             background-color: #1a1a1a;
@@ -103,6 +90,77 @@
             padding: 20px;
             margin-top: 50px;
         }
+
+        /* CLI Setup Section */
+        .cli-box {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid #03dac6;
+            border-radius: 12px;
+            padding: 28px;
+            margin: 30px 0;
+        }
+        .cli-box h3 {
+            color: #03dac6;
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+        .cli-box p {
+            color: #bbbbbb;
+            margin-bottom: 20px;
+        }
+        .script-block {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #00ff00;
+            white-space: pre;
+            overflow-x: auto;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .copy-btn {
+            display: inline-block;
+            background: #03dac6;
+            color: #000;
+            font-weight: 700;
+            font-size: 0.85em;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .copy-btn:hover { background: #00fff5; transform: translateY(-1px); }
+        .copy-btn:active { transform: translateY(1px); }
+        .copy-btn.copied { background: #22c55e; color: #fff; }
+
+        .method-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #03dac6;
+            color: #000;
+            border-color: #03dac6;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -116,7 +174,7 @@
     <div class="hero-container">
         <div class="hero-text">
             <p class="description">
-                The official Flatpak repository for the Human Time System. An infinite, cyclical calendar designed for deep time, tracking Epochs of 50,000 years starting from A0. 
+                The official Flatpak repository for the Human Time System. An infinite, cyclical calendar designed for deep time, tracking Epochs of 50,000 years starting from A0.
             </p>
         </div>
         <div class="hero-logo">
@@ -144,9 +202,89 @@
     <div class="code-block">hts-time</div>
     <div class="output-block">Wed Feb 25 22:40:25 CST 2026  HTS A40003</div>
 
+    <!-- CLI SETUP SECTION -->
+    <h2>🖥️ Enable CLI Access</h2>
+    <div class="cli-box">
+        <h3>Why is this needed?</h3>
+        <p>Flatpak sandboxes apps for security, so the <code>hts-time</code> command isn't automatically available in your terminal. Use one of the two methods below to fix this.</p>
+
+        <div class="method-tabs">
+            <div class="tab active" onclick="switchTab('script')">Setup Script (Recommended)</div>
+            <div class="tab" onclick="switchTab('alias')">Quick Alias</div>
+        </div>
+
+        <div class="tab-content active" id="tab-script">
+            <p>Run this script once. It creates a permanent <code>hts-time</code> shortcut in <code>~/.local/bin</code>.</p>
+            <div class="script-block" id="script-content">#!/bin/bash
+# HTS Time System - CLI Setup Script
+# By Antonio Storcke
+APP_ID="com.storcke64.hts_time"
+BIN_NAME="hts-time"
+LOCAL_BIN="$HOME/.local/bin"
+
+mkdir -p "$LOCAL_BIN"
+
+EXPORT_PATH=$(find /var/lib/flatpak/exports/bin \
+    ~/.local/share/flatpak/exports/bin \
+    -name "$APP_ID" 2>/dev/null | head -n 1)
+
+if [ -z "$EXPORT_PATH" ]; then
+    echo "Error: $APP_ID not found. Please install it first."
+    exit 1
+fi
+
+ln -sf "$EXPORT_PATH" "$LOCAL_BIN/$BIN_NAME"
+echo "✓ Shortcut created: $LOCAL_BIN/$BIN_NAME"
+
+if [[ ":$PATH:" != *":$LOCAL_BIN:"* ]]; then
+    echo "Note: Add this to your .bashrc:"
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+else
+    echo "✓ Setup complete! Type 'hts-time' in your terminal."
+fi</div>
+            <button class="copy-btn" onclick="copyScript()">📋 Copy Script</button>
+        </div>
+
+        <div class="tab-content" id="tab-alias">
+            <p>Add this line to your <code>~/.bashrc</code> or <code>~/.zshrc</code> for a quick alias:</p>
+            <div class="script-block" id="alias-content">alias hts-time='flatpak run com.storcke64.hts_time'</div>
+            <button class="copy-btn" onclick="copyAlias()">📋 Copy Alias</button>
+            <p style="margin-top:16px; color:#888; font-size:0.9em">Then run: <code style="color:#03dac6">source ~/.bashrc</code></p>
+        </div>
+    </div>
+
     <div class="note">
         <strong>Note:</strong> This page serves the Flatpak repository data. Please use the terminal commands above to install.
     </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function copyScript() {
+            const text = document.getElementById('script-content').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy Script'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+
+        function copyAlias() {
+            const text = document.getElementById('alias-content').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = '📋 Copy Alias'; btn.classList.remove('copied'); }, 2000);
+            });
+        }
+    </script>
 
 </body>
 </html>
