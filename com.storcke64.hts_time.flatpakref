@@ -1,0 +1,11 @@
+[Flatpak Ref]
+Name=com.storcke64.hts_time
+Branch=master
+Title=HTS Time System
+Comment=An infinite, cyclical deep-time calendar
+Description=The Storcke Human Time System is an infinite, cyclical calendar designed for deep time, featuring a video screensaver engine, global timezone display, and QR code output.
+Url=https://storcke64.github.io/hts-time/
+Homepage=https://storcke64.github.io/hts-time/
+Icon=https://storcke64.github.io/hts-time/hts-logo.png
+RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+IsRuntime=false
