@@ -1,3 +1,7 @@
+/* * The Storcke Human Time System - By Antonio Storcke
+ * Version: A40003.x
+ * Fix: CMake policy compatibility for libqrencode & Control Panel pathing.
+ */
 {
     "app-id": "com.storcke64.hts_time",
     "runtime": "org.gnome.Platform",
@@ -6,16 +10,21 @@
     "command": "hts-time",
     "finish-args": [
         "--share=ipc",
+        "--share=network",
         "--socket=wayland",
         "--socket=fallback-x11",
         "--socket=pulseaudio",
         "--device=dri",
-        "--share=network",
-        "--filesystem=xdg-videos:ro",
+        "--device=all",
+        "--filesystem=xdg-videos:create",
+        "--talk-name=org.freedesktop.portal.FileChooser",
         "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.freedesktop.portal.Desktop",
+        "--talk-name=org.freedesktop.portal.Documents",
+        "--env=WEBKIT_FORCE_SANDBOX=0",
         "--env=GDK_BACKEND=wayland,x11",
         "--env=GTK_USE_PORTAL=1",
-        "--env=GST_PLUGIN_PATH=/app/lib/ffmpeg/lib/gstreamer-1.0",
+        "--env=GST_PLUGIN_PATH=/app/lib/ffmpeg/lib/gstreamer-1.0:/usr/lib/x86_64-linux-gnu/gstreamer-1.0:/usr/lib/gstreamer-1.0",
         "--env=LD_LIBRARY_PATH=/app/lib/ffmpeg/lib"
     ],
     "add-extensions": {
@@ -40,6 +49,7 @@
                 "-DBUILD_SHARED_LIBS=ON",
                 "-DWITH_TOOLS=OFF",
                 "-DWITH_TESTS=OFF",
+                /* Fix for the CMake < 3.5 compatibility error */
                 "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
             ],
             "sources": [
@@ -69,15 +79,17 @@
             "name": "hts-time",
             "buildsystem": "meson",
             "config-opts": [
-                "--prefix=/app",
-                "-Ddatadir=share"
+                "--prefix=/app"
+            ],
+            "post-install": [
+                "mkdir -p /app/bin/data",
+                "ln -sf /app/share/hts-time/data/videos /app/bin/data/videos",
+                "ln -sf /app/share/hts-time/data/pages /app/bin/data/pages"
             ],
             "sources": [
                 {
-                    "type": "git",
-                    "url": "https://github.com/storcke64/hts-time.git",
-                    "tag": "A40003.6",
-                    "commit": "f32b8776a71b1a7d497a0ae7d56a573efa98fde1"
+                    "type": "dir",
+                    "path": "."
                 }
             ]
         },
@@ -90,10 +102,8 @@
             ],
             "sources": [
                 {
-                    "type": "git",
-                    "url": "https://github.com/storcke64/hts-time.git",
-                    "tag": "A40003.6",
-                    "commit": "f32b8776a71b1a7d497a0ae7d56a573efa98fde1"
+                    "type": "dir",
+                    "path": "."
                 }
             ]
         }
